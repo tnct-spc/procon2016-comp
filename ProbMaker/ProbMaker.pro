@@ -13,8 +13,13 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        probmaker.cpp
+        probmaker.cpp \
+    voronoidiagrammaker.cpp
 
-HEADERS  += probmaker.h
+HEADERS  += probmaker.h \
+    voronoidiagrammaker.h
 
 FORMS    += probmaker.ui
+
+LIBS += -L/usr/local/lib `pkg-config --libs opencv`
+LIBS += -lboost_system -lboost_thread
