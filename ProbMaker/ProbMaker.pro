@@ -14,10 +14,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         probmaker.cpp \
-    voronoidiagrammaker.cpp
+    voronoidiagrammaker.cpp \
+    fieldmaker.cpp
 
 HEADERS  += probmaker.h \
-    voronoidiagrammaker.h
+    voronoidiagrammaker.h \
+    fieldmaker.h
 
 FORMS    += probmaker.ui
 

@@ -7,6 +7,10 @@ PolygonExpansion::PolygonExpansion()
     sideAngle.reserve(32);
 }
 
+PolygonExpansion::PolygonExpansion(polygon_t const& pol){
+    setPolygon(pol);
+}
+
 polygon_t PolygonExpansion::getPolygon(){
     return polygon;
 }

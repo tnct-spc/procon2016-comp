@@ -13,6 +13,7 @@ typedef bg::model::polygon<point_t> polygon_t;
 
 class Field
 {
+protected:
     PolygonExpansion fieldFlame;
     std::vector<PolygonExpansion> fieldPiece;
 public:
@@ -24,16 +25,6 @@ public:
     PolygonExpansion popPiece();
     PolygonExpansion getPiece(const int &n) ;
     PolygonExpansion getFlame() ;
-    //以下はsetterとgetterの後方互換用 *↑とオーバーロードできない(getterの引数が同じ)なので気をつけて*
-    /*
-    void setFlame(const polygon_t &flame);
-    void setPiece(const polygon_t &piece,const int &n);
-    void pushPiece(const polygon_t &piece);
-    polygon_t popPiece();
-    polygon_t getPiece(const int &n) ;
-    polygon_t getFlame();
-    */
-    //*ここまで*
     //fieldPieceにセットされているピースの数
     int pieceSize();
     //コンソール出力

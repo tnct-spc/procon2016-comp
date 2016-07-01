@@ -23,9 +23,10 @@ class VoronoiDiagramMaker
 public:
     VoronoiDiagramMaker();
     std::vector<cv::Point2f> generateRandomPoints(int n);
-    void generateVoronoiDiagram();
+    void generateVoronoiDiagram(int n);
     void printVoronoiDiagram();
-    std::vector<polygon_t> cvToBoost(std::vector<std::vector<cv::Point2f>> const& vertex_list);
+    std::vector<polygon_t> cvToBoost();
+    
 };
 
 #endif // VORONOIDIAGRAMMAKER_H

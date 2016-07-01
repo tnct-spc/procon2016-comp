@@ -11,7 +11,9 @@ int main(int argc, char *argv[])
     w.run();
     */
     VoronoiDiagramMaker v;
-    v.generateVoronoiDiagram();
+    v.generateVoronoiDiagram(50);
     v.printVoronoiDiagram();
+    std::vector<polygon_t> pol  = v.cvToBoost();
+    std::for_each(pol.begin(),pol.end(),[](polygon_t &a){std::cout << bg::dsv(a) << std::endl;});
     return a.exec();
 }

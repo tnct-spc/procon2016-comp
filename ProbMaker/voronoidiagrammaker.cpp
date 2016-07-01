@@ -1,8 +1,7 @@
 #include "voronoidiagrammaker.h"
-
 VoronoiDiagramMaker::VoronoiDiagramMaker()
 {
-    subdiv.initDelaunay(cv::Rect(0, 0, 600, 600));
+    subdiv.initDelaunay(cv::Rect(20, 20, 580, 580));
 }
 
 std::vector<cv::Point2f> VoronoiDiagramMaker::generateRandomPoints(int n)
@@ -11,8 +10,8 @@ std::vector<cv::Point2f> VoronoiDiagramMaker::generateRandomPoints(int n)
     std::random_device seed;
     //メルセンヌ・ツイスタ擬似乱数生成器
     std::mt19937 mt(seed());
-    //0〜599の一様分布
-    std::uniform_int_distribution<int> distribution(0, 599);
+    //20〜579の一様分布
+    std::uniform_int_distribution<int> distribution(20, 579);
     //opencv版point_xy
     std::vector<cv::Point2f> points;
     for(int i = 0; i < n; i++){
@@ -23,17 +22,17 @@ std::vector<cv::Point2f> VoronoiDiagramMaker::generateRandomPoints(int n)
     return std::move(points);
 }
 
-void VoronoiDiagramMaker::generateVoronoiDiagram()
+void VoronoiDiagramMaker::generateVoronoiDiagram(int n)
 {
-    subdiv.insert(generateRandomPoints(60));
+    subdiv.insert(generateRandomPoints(n));
     subdiv.getVoronoiFacetList(id_list, vertex_list, generatrix_list);
 }
 
 void VoronoiDiagramMaker::printVoronoiDiagram()
 {
     cv::Mat img = cv::Mat::zeros(600, 600, CV_8UC3);
-     for(auto list = vertex_list.begin(); list != vertex_list.end(); list++)
-     {
+    for(auto list = vertex_list.begin(); list != vertex_list.end(); list++)
+    {
          cv::Point2f before = list->back();
          for(auto pt = list->begin(); pt != list->end(); pt++)
          {
@@ -42,17 +41,23 @@ void VoronoiDiagramMaker::printVoronoiDiagram()
              cv::line(img, p1, p2, cv::Scalar(255,255,255));
              before = *pt;
          }
-     }
-     cv::namedWindow("voronoi");
-     cv::imshow("voronoi", img);
-     cv::waitKey();
+    }
+    cv::namedWindow("voronoi");
+    cv::imshow("voronoi", img);
+    cv::waitKey();
 }
 
-std::vector<polygon_t> cvToBoost(std::vector<std::vector<cv::Point2f>> const& vertex_list)
+std::vector<polygon_t> VoronoiDiagramMaker::cvToBoost()
 {
+    std::vector<polygon_t> pol((int)(vertex_list.end() - vertex_list.begin()));
+    std::vector<polygon_t>::iterator pol_it = pol.begin();
     for (std::vector<cv::Point2f> i : vertex_list){
         for (cv::Point2f j : i){
             point_t p(j.x,j.y);
+            pol_it->outer().push_back(p);
         }
+        pol_it++;
     }
+    return std::move(pol);
 }
+

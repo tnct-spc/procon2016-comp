@@ -29,6 +29,7 @@ class PolygonExpansion
     void calcSideAngle();
 public:
     PolygonExpansion();
+    PolygonExpansion(polygon_t const& pol);
     /*getterとsetter*/
     polygon_t getPolygon();
     const std::vector<double> getSideLength();
