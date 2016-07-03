@@ -1,5 +1,7 @@
 #ifndef FIELDMAKER_H
 #define FIELDMAKER_H
+#include <random>
+#include <cmath>
 #include <boost/geometry.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
@@ -17,7 +19,10 @@ public:
     FieldMaker(std::vector<polygon_t> const& pol);
     void limitPieces(std::vector<polygon_t> const& polygon);
     void makeFlame();
-    void unionFlameAndPieces();
+    void unionFlameAndPieces(int probability);
 };
 
+namespace comp {
+    double round(double a,int n);
+}
 #endif // FIELDMAKER_H

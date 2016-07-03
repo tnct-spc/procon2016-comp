@@ -66,6 +66,7 @@ std::vector<polygon_t> VoronoiDiagramMaker::cvToBoost()
     return std::move(pol);
 }
 
+
 /*
 std::vector<point_d> BoostVoronoiDiagramMaker::generateRandomPoints(int n){
     std::random_device seed;

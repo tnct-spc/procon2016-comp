@@ -40,6 +40,8 @@ public:
     
 };
 
+
+
 //Boostにもvoronoi作るやつがあったけど見なかったことにしよう
 /*---------------------------------------------------------
 class BoostVoronoiDiagramMaker
