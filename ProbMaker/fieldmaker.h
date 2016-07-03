@@ -1,5 +1,7 @@
 #ifndef FIELDMAKER_H
 #define FIELDMAKER_H
+#include "field.h"
+#include "polygonexpansion.h"
 #include <random>
 #include <cmath>
 #include <boost/geometry.hpp>
@@ -12,14 +14,20 @@ typedef bg::model::polygon<point_t> polygon_t;
 
 class FieldMaker
 {
+private:
     polygon_t flame;
     std::vector<polygon_t> pieces;
     std::vector<polygon_t> exterior_pieces;
-public:
-    FieldMaker(std::vector<polygon_t> const& pol);
+protected:
     void limitPieces(std::vector<polygon_t> const& polygon);
     void makeFlame();
     void unionFlameAndPieces(int probability);
+public:
+    FieldMaker();
+    void makeField(std::vector<polygon_t> const& polygon,int probablity = 30);
+    std::vector<polygon_t> getPieces();
+    polygon_t getFlame();
+    Field getField();
 };
 
 namespace comp {

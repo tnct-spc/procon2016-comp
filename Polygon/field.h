@@ -21,6 +21,7 @@ public:
     //setterとgetter
     void setFlame(const PolygonExpansion &flame); 
     void setPiece(const PolygonExpansion &piece,const int &n);
+    void setPieces(std::vector<PolygonExpansion> const& pieces);
     void pushPiece(const PolygonExpansion &piece);
     PolygonExpansion popPiece();
     PolygonExpansion getPiece(const int &n) ;

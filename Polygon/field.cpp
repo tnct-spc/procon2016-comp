@@ -12,6 +12,9 @@ void Field::setPiece(const PolygonExpansion &piece,const int &n){
     if (n < pieceSize()) field_piece[n] = piece;
     else pushPiece(piece);
 }
+void Field::setPieces(std::vector<PolygonExpansion> const& pieces){
+    field_piece = pieces;
+}
 
 void Field::pushPiece(const PolygonExpansion &piece){
     field_piece.push_back(piece);

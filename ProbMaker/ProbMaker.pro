@@ -25,3 +25,12 @@ FORMS    += probmaker.ui
 
 LIBS += -L/usr/local/lib `pkg-config --libs opencv`
 LIBS += -lboost_system -lboost_thread
+
+unix:!macx: LIBS += -L$$OUT_PWD/../Polygon/ -lPolygon
+INCLUDEPATH += $$PWD/../Polygon
+DEPENDPATH += $$PWD/../Polygon
+
+
+unix:!macx: LIBS += -L$$OUT_PWD/../DisplayAnswer/ -lDisplayAnswer
+INCLUDEPATH += $$PWD/../DisplayAnswer
+DEPENDPATH += $$PWD/../DisplayAnswer
