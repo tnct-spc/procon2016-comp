@@ -2,33 +2,33 @@
 
 Field::Field()
 {
-    fieldPiece.reserve(50);
+    field_piece.reserve(50);
 }
 void Field::setFlame(const PolygonExpansion &flame){
-    fieldFlame = flame;
+    field_flame = flame;
 }
 
 void Field::setPiece(const PolygonExpansion &piece,const int &n){
-    if (n < pieceSize()) fieldPiece[n] = piece;
+    if (n < pieceSize()) field_piece[n] = piece;
     else pushPiece(piece);
 }
 
 void Field::pushPiece(const PolygonExpansion &piece){
-    fieldPiece.push_back(piece);
+    field_piece.push_back(piece);
 }
 
 PolygonExpansion Field::popPiece(){
-    PolygonExpansion tmp = fieldPiece.back();
-    fieldPiece.pop_back();
+    PolygonExpansion tmp = field_piece.back();
+    field_piece.pop_back();
     return tmp;
 }
 
 PolygonExpansion Field::getPiece(const int &n){
-    return fieldPiece[n];
+    return field_piece[n];
 }
 
 PolygonExpansion Field::getFlame(){
-    return fieldFlame;
+    return field_flame;
 }
 
 
@@ -66,13 +66,13 @@ polygon_t Field::getPiece(const int &n) {
 /*ここまで*/
 
 int Field::pieceSize(){
-    return (int)(fieldPiece.end() - fieldPiece.begin());
+    return (int)(field_piece.size());
 }
 
 void Field::printFlame(){
-    std::cout << bg::dsv(fieldFlame.getPolygon()) << std::endl;
+    std::cout << bg::dsv(field_flame.getPolygon()) << std::endl;
 }
 
 void Field::printPiece(){
-    std::for_each(fieldPiece.begin(),fieldPiece.end(),[](PolygonExpansion &a){std::cout << bg::dsv(a.getPolygon()) << std::endl;});
+    std::for_each(field_piece.begin(),field_piece.end(),[](PolygonExpansion &a){std::cout << bg::dsv(a.getPolygon()) << std::endl;});
 }

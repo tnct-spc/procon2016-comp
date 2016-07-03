@@ -1,21 +1,21 @@
 #ifndef FIELD_H
 #define FIELD_H
 #include <iostream>
+#include <vector>
 #include <boost/geometry.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <vector>
 #include "polygonexpansion.h"
 namespace bg = boost::geometry;
-typedef bg::model::d2::point_xy<double> point_t;
-typedef bg::model::polygon<point_t> polygon_t;
+using point_t = bg::model::d2::point_xy<double>;
+using polygon_t = bg::model::polygon<point_t>;
 
 
 class Field
 {
 protected:
-    PolygonExpansion fieldFlame;
-    std::vector<PolygonExpansion> fieldPiece;
+    PolygonExpansion field_flame;
+    std::vector<PolygonExpansion> field_piece;
 public:
     Field();
     //setterとgetter
