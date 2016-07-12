@@ -64,11 +64,22 @@ void FieldMaker::unionFlameAndPieces(int probability){
     std::cout << "flame" << bg::dsv(flame) << std::endl;
 }
 
+void FieldMaker::normalizePieces(){
+    for (auto p : pieces){
+            bg::strategy::transform::translate_transformer<double,2,2> trans(-(p.outer().at(0).x()),-(p.outer().at(0).y()));
+            polygon_t tmp;
+            bg::transform(p,tmp,trans);
+            norm_pieces.push_back(tmp);
+            std::cout << "iitenki" << bg::dsv(tmp) << std::endl;
+    }
+}
+
 /*--------------------------------public-------------------------------*/
 void FieldMaker::makeField(const std::vector<polygon_t> &polygon,int probability){
     makeFlame();
     limitPieces(polygon);
     unionFlameAndPieces(probability);
+    normalizePieces();
 }
 
 std::vector<polygon_t> FieldMaker::getPieces(){
@@ -82,7 +93,7 @@ polygon_t FieldMaker::getFlame(){
 Field FieldMaker::getField(){
     PolygonExpansion ex_f(flame);
     std::vector<PolygonExpansion> ex_p;
-    for (int i = 0;i < pieces.size();i++){
+    for (int i = 0;i < (int)pieces.size();i++){
         PolygonExpansion p(pieces.at(i));
         ex_p.push_back(p);
     }
@@ -93,6 +104,7 @@ Field FieldMaker::getField(){
 }
 
 /*--------------comp----------------*/
+
 double comp::round(double a, int n){
     a *= std::pow(10,n);
     a = std::round(a);

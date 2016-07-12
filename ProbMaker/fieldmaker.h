@@ -17,11 +17,13 @@ class FieldMaker
 private:
     polygon_t flame;
     std::vector<polygon_t> pieces;
+    std::vector<polygon_t> norm_pieces;
     std::vector<polygon_t> exterior_pieces;
 protected:
     void limitPieces(std::vector<polygon_t> const& polygon);
     void makeFlame();
     void unionFlameAndPieces(int probability);
+    void normalizePieces();
 public:
     FieldMaker();
     void makeField(std::vector<polygon_t> const& polygon,int probablity = 30);
