@@ -119,6 +119,93 @@ Fit::DotORLine AlgorithmWrapper::findEnd(procon::ExpandedPolygon polygon1, proco
     }
 }
 
+// 頂点配列を指定してオブジェクトを作成
+Piece::Piece(int _n, const Point *_p)
+{
+    n = _n;
+    p.resize(_n);
+    for (int i = 0; i < _n; i++) p[i] = _p[i];
+}
+
+// 入力データ：破片の一覧
+std::vector<Piece> g_pieces;
+
+// func()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
+std::vector<PieceEdge> g_comb;
+
+// 組み合わせを保存する配列
+std::vector<std::vector<PieceEdge>> g_stack;
+
+// rl : フレーム辺の残りの長さ
+// pi : 破片番号。g_pieces[]のインデックス。
+void fitSide(double rl, int pi)
+{
+    // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
+    if (fabs(rl) < 0.001)
+    {
+        // 破片とその辺の組み合わせを保存
+        g_stack.push_back(g_comb);
+        return;
+    }
+
+    // すべての破片の組み合わせを試してたら再帰から抜ける。
+    if ((int)g_pieces.size() <= pi)
+    {
+        return;
+    }
+
+    // 破片の各辺を入れて再帰する
+    for (int e = 0; e < g_pieces[pi].n; e++)
+    {
+        // フレーム辺の残りの長さより破片の辺が短ければ入れてみる。
+        double l = g_pieces[pi].getEdgeLength(e);
+        if (l <= rl)
+        {
+            // この破片と辺をスタックに積む
+            g_comb.push_back(PieceEdge(pi, e));
+            // 次の破片へ再帰
+            fitSide(rl - l, pi + 1);
+            // スタックから取り除く。
+            g_comb.pop_back();
+        }
+    }
+
+    // この破片は入れずに、次の破片へ再帰する。
+    fitSide(rl, pi + 1);
+}
+
+void test()
+{
+    // テストデータをセットアップ
+    Point p0[] = { { 0, 0 }, { 0, 4 }, { 2, 0 } };
+    Point p1[] = { { 2, 0 }, { 1, 2 }, { 3, 2 }, { 3, 0 } };
+    Point p2[] = { { 1, 2 }, { 0, 4 }, { 4, 4 }, { 5, 0 }, { 3, 0 }, { 3, 2 }, };
+    Point p3[] = { { 5, 0 }, { 4, 4 }, { 6, 4 }, { 6, 0 } };
+    g_pieces.push_back(Piece(3, p0));
+    g_pieces.push_back(Piece(4, p1));
+    g_pieces.push_back(Piece(6, p2));
+    g_pieces.push_back(Piece(4, p3));
+
+    // テストするフレーム辺の長さを指定して処理を実行
+    fitSide(4.0, 0);
+
+    // すべての組み合わせを表示
+    for (int s = 0; s < (int)g_stack.size(); s++)
+    {
+        for (int p = 0; p < (int)g_stack[s].size(); p++)
+        {
+            printf("piece %d-%d\n", g_stack[s][p].pi, g_stack[s][p].e);
+        }
+        printf("\n");
+    }
+
+    std::vector<std::vector<PieceEdge>> box;
+    box = g_stack;
+
+    printf("OK");
+}
+
 AlgorithmWrapper::AlgorithmWrapper()
 {
+    test();
 }

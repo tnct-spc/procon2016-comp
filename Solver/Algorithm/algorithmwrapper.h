@@ -31,7 +31,61 @@ public:
 
     } PieceAssesment;
 
+    typedef struct {
+
+        int piece_id;
+        int side_id;
+        double length_capacity;
+
+    } SidePair;
 
 };
+
+class Point
+{
+public:
+    double x, y;
+};
+
+class Piece
+{
+public:
+    // 空のコンストラクタ
+    Piece() {}
+    // 頂点配列を指定してオブジェクトを作成
+    Piece(int _n, const Point *_p);
+
+    int n; // 角数
+    std::vector<Point> p; // 各点の座標
+
+    // 辺の長さを求める
+    double getEdgeLength(int e)
+    {
+        double x = p[(e + 1) % n].x - p[e].x;
+        double y = p[(e + 1) % n].y - p[e].y;
+        double d = sqrt(x*x + y*y);
+        return d;
+    }
+};
+
+class PieceEdge
+{
+public:
+    // 空のコンストラクタ
+    PieceEdge() {}
+    // 破片と辺番号を指定してオブジェクトを作成
+    PieceEdge(int _pi, int _e) :
+        pi(_pi),
+        e(_e)
+    {}
+
+public:
+    int pi;
+    int e;
+};
+
+void fitSide(double rl, int pi);
+
+void test();
 
 #endif // ALGORITHMWRAPPER_H
