@@ -58,7 +58,9 @@ public:
     int e;
 };
 
-void fitSide(double rl, int pi);
+void searchPairSide(double rl, int pi);
+
+std::vector<std::vector<PieceEdge>> fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces);
 
 void test();
 

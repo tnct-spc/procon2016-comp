@@ -9,7 +9,6 @@
 AlgorithmWrapper::AlgorithmWrapper()
 {
     test();
-
 }
 
 procon::Field AlgorithmWrapper::run(procon::Field field)
@@ -125,7 +124,6 @@ Fit::DotORLine AlgorithmWrapper::findEnd(procon::ExpandedPolygon polygon1, proco
         }
     }
 }
-
 std::vector<procon::ExpandedPolygon> g_pieces;
 
 // func()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
@@ -136,7 +134,7 @@ std::vector<std::vector<PieceEdge>> g_stack;
 
 // rl : フレーム辺の残りの長さ
 // pi : 破片番号。g_pieces[]のインデックス。
-void fitSide(double rl, int pi)
+void searchPairSide(double rl, int pi)
 {
     // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
     if (fabs(rl) < 0.001)
@@ -163,17 +161,28 @@ void fitSide(double rl, int pi)
         if (l <= rl)
         {
             // この破片と辺をスタックに積む
-            int pi_id = piece.getId();
-            g_comb.push_back(PieceEdge(pi_id, e));
+            g_comb.push_back(PieceEdge(pi, e));
             // 次の破片へ再帰
-            fitSide(rl - l, pi + 1);
+            searchPairSide(rl - l, pi + 1);
             // スタックから取り除く。
             g_comb.pop_back();
         }
     }
 
     // この破片は入れずに、次の破片へ再帰する。
-    fitSide(rl, pi + 1);
+    searchPairSide(rl, pi + 1);
+}
+
+std::vector<std::vector<PieceEdge>> fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces)
+{
+    // テストするフレーム辺の長さを指定して処理を実行
+    g_pieces = pieces;
+    searchPairSide(frame,0);
+
+    std::vector<std::vector<PieceEdge>> box;
+    box = g_stack;
+
+    return box;
 }
 
 void test()
@@ -218,16 +227,14 @@ void test()
     polygon3.setPolygon(sample13);
     polygon4.setPolygon(sample14);
 
-    g_pieces.push_back(polygon1);
-    g_pieces.push_back(polygon2);
-    g_pieces.push_back(polygon3);
-    g_pieces.push_back(polygon4);
+    std::vector<procon::ExpandedPolygon> pieces;
+    pieces.push_back(polygon1);
+    pieces.push_back(polygon2);
+    pieces.push_back(polygon3);
+    pieces.push_back(polygon4);
 
-    // テストするフレーム辺の長さを指定して処理を実行
-    fitSide(4.0, 0);
-
-    std::vector<std::vector<PieceEdge>> box;
-    box = g_stack;
+    std::vector<std::vector<PieceEdge>> stacks;
+    stacks = fitSide(4.0,pieces);
 
     printf("OK");
 }
