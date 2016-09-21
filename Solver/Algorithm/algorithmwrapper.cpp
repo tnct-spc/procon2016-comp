@@ -124,6 +124,8 @@ Fit::DotORLine AlgorithmWrapper::findEnd(procon::ExpandedPolygon polygon1, proco
         }
     }
 }
+
+// ピースの情報の入った配列
 std::vector<procon::ExpandedPolygon> g_pieces;
 
 // func()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
@@ -153,6 +155,8 @@ void searchPairSide(double rl, int pi)
     // 破片の各辺を入れて再帰する
     procon::ExpandedPolygon piece;
     piece.updatePolygon();
+
+    // 配列からExpolygonを一つ取り出す
     piece = g_pieces[pi];
     for (int e = 0; e < piece.getSize(); e++)
     {
@@ -161,6 +165,8 @@ void searchPairSide(double rl, int pi)
         if (l <= rl)
         {
             // この破片と辺をスタックに積む
+            // 実際のピースの情報を使う際にはpiはピースのIDに変える
+            // pi_id = piece.getId();
             g_comb.push_back(PieceEdge(pi, e));
             // 次の破片へ再帰
             searchPairSide(rl - l, pi + 1);
@@ -173,12 +179,14 @@ void searchPairSide(double rl, int pi)
     searchPairSide(rl, pi + 1);
 }
 
+// 扱い易いようにグローバル関数をローカル関数に変換するための関数
 std::vector<std::vector<PieceEdge>> fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces)
 {
-    // テストするフレーム辺の長さを指定して処理を実行
+    // ピースの情報をグローバル化し、実行
     g_pieces = pieces;
     searchPairSide(frame,0);
 
+    // 組合せの保存されたグローバル関数をローカル関数にし返す
     std::vector<std::vector<PieceEdge>> box;
     box = g_stack;
 
@@ -233,6 +241,7 @@ void test()
     pieces.push_back(polygon3);
     pieces.push_back(polygon4);
 
+    //フレームの辺の長さとExpolygonの配列を入れると、ぴったりとはまる辺の組合せの配列が返ってくる
     std::vector<std::vector<PieceEdge>> stacks;
     stacks = fitSide(4.0,pieces);
 
