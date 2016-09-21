@@ -38,5 +38,6 @@ int main(int argc, char *argv[])
     } else {
         std::cout << "***FAILED! "<<error_cnt<<" tests return false***" << std::endl;
     }
+
     return a.exec();
 }

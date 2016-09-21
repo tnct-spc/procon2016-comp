@@ -1,9 +1,16 @@
 #include "algorithmwrapper.h"
 #include "utilities.h"
+#include "field.h"
 
 #include <math.h>
 
 #define PI 3.141592
+
+AlgorithmWrapper::AlgorithmWrapper()
+{
+    test();
+
+}
 
 procon::Field AlgorithmWrapper::run(procon::Field field)
 {
@@ -119,16 +126,7 @@ Fit::DotORLine AlgorithmWrapper::findEnd(procon::ExpandedPolygon polygon1, proco
     }
 }
 
-// 頂点配列を指定してオブジェクトを作成
-Piece::Piece(int _n, const Point *_p)
-{
-    n = _n;
-    p.resize(_n);
-    for (int i = 0; i < _n; i++) p[i] = _p[i];
-}
-
-// 入力データ：破片の一覧
-std::vector<Piece> g_pieces;
+std::vector<procon::ExpandedPolygon> g_pieces;
 
 // func()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
 std::vector<PieceEdge> g_comb;
@@ -149,20 +147,24 @@ void fitSide(double rl, int pi)
     }
 
     // すべての破片の組み合わせを試してたら再帰から抜ける。
-    if ((int)g_pieces.size() <= pi)
+    if (g_pieces.size() <= pi)
     {
         return;
     }
 
     // 破片の各辺を入れて再帰する
-    for (int e = 0; e < g_pieces[pi].n; e++)
+    procon::ExpandedPolygon piece;
+    piece.updatePolygon();
+    piece = g_pieces[pi];
+    for (int e = 0; e < piece.getSize(); e++)
     {
         // フレーム辺の残りの長さより破片の辺が短ければ入れてみる。
-        double l = g_pieces[pi].getEdgeLength(e);
+        double l = piece.getSideLength()[e];
         if (l <= rl)
         {
             // この破片と辺をスタックに積む
-            g_comb.push_back(PieceEdge(pi, e));
+            int pi_id = piece.getId();
+            g_comb.push_back(PieceEdge(pi_id, e));
             // 次の破片へ再帰
             fitSide(rl - l, pi + 1);
             // スタックから取り除く。
@@ -177,35 +179,55 @@ void fitSide(double rl, int pi)
 void test()
 {
     // テストデータをセットアップ
-    Point p0[] = { { 0, 0 }, { 0, 4 }, { 2, 0 } };
-    Point p1[] = { { 2, 0 }, { 1, 2 }, { 3, 2 }, { 3, 0 } };
-    Point p2[] = { { 1, 2 }, { 0, 4 }, { 4, 4 }, { 5, 0 }, { 3, 0 }, { 3, 2 }, };
-    Point p3[] = { { 5, 0 }, { 4, 4 }, { 6, 4 }, { 6, 0 } };
-    g_pieces.push_back(Piece(3, p0));
-    g_pieces.push_back(Piece(4, p1));
-    g_pieces.push_back(Piece(6, p2));
-    g_pieces.push_back(Piece(4, p3));
+    procon::ExpandedPolygon polygon1(0);
+    procon::ExpandedPolygon polygon2(0);
+    procon::ExpandedPolygon polygon3(0);
+    procon::ExpandedPolygon polygon4(0);
+
+    polygon_t sample11;
+    sample11.outer().push_back(point_t(0,0));
+    sample11.outer().push_back(point_t(0,4));
+    sample11.outer().push_back(point_t(2,0));
+    sample11.outer().push_back(point_t(0,0));
+
+    polygon_t sample12;
+    sample12.outer().push_back(point_t(2,0));
+    sample12.outer().push_back(point_t(1,2));
+    sample12.outer().push_back(point_t(3,2));
+    sample12.outer().push_back(point_t(3,0));
+    sample12.outer().push_back(point_t(2,0));
+
+    polygon_t sample13;
+    sample13.outer().push_back(point_t(1,2));
+    sample13.outer().push_back(point_t(0,4));
+    sample13.outer().push_back(point_t(4,4));
+    sample13.outer().push_back(point_t(5,0));
+    sample13.outer().push_back(point_t(3,0));
+    sample13.outer().push_back(point_t(3,2));
+    sample13.outer().push_back(point_t(1,2));
+
+    polygon_t sample14;
+    sample14.outer().push_back(point_t(5,0));
+    sample14.outer().push_back(point_t(4,4));
+    sample14.outer().push_back(point_t(6,4));
+    sample14.outer().push_back(point_t(6,0));
+    sample14.outer().push_back(point_t(5,0));
+
+    polygon1.setPolygon(sample11);
+    polygon2.setPolygon(sample12);
+    polygon3.setPolygon(sample13);
+    polygon4.setPolygon(sample14);
+
+    g_pieces.push_back(polygon1);
+    g_pieces.push_back(polygon2);
+    g_pieces.push_back(polygon3);
+    g_pieces.push_back(polygon4);
 
     // テストするフレーム辺の長さを指定して処理を実行
     fitSide(4.0, 0);
-
-    // すべての組み合わせを表示
-    for (int s = 0; s < (int)g_stack.size(); s++)
-    {
-        for (int p = 0; p < (int)g_stack[s].size(); p++)
-        {
-            printf("piece %d-%d\n", g_stack[s][p].pi, g_stack[s][p].e);
-        }
-        printf("\n");
-    }
 
     std::vector<std::vector<PieceEdge>> box;
     box = g_stack;
 
     printf("OK");
-}
-
-AlgorithmWrapper::AlgorithmWrapper()
-{
-    test();
 }

@@ -10,6 +10,7 @@
 class AlgorithmWrapper
 {
 public:
+
     AlgorithmWrapper();
 
     virtual procon::Field run(procon::Field field);
@@ -39,33 +40,6 @@ public:
 
     } SidePair;
 
-};
-
-class Point
-{
-public:
-    double x, y;
-};
-
-class Piece
-{
-public:
-    // 空のコンストラクタ
-    Piece() {}
-    // 頂点配列を指定してオブジェクトを作成
-    Piece(int _n, const Point *_p);
-
-    int n; // 角数
-    std::vector<Point> p; // 各点の座標
-
-    // 辺の長さを求める
-    double getEdgeLength(int e)
-    {
-        double x = p[(e + 1) % n].x - p[e].x;
-        double y = p[(e + 1) % n].y - p[e].y;
-        double d = sqrt(x*x + y*y);
-        return d;
-    }
 };
 
 class PieceEdge
