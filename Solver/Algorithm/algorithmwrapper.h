@@ -42,6 +42,7 @@ public:
 
 };
 
+// 当てはまるピースのIDをいれるクラス
 class PieceEdge
 {
 public:
