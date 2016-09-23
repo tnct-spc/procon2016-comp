@@ -42,27 +42,4 @@ public:
 
 };
 
-// 当てはまるピースのIDをいれるクラス
-class PieceEdge
-{
-public:
-    // 空のコンストラクタ
-    PieceEdge() {}
-    // 破片と辺番号を指定してオブジェクトを作成
-    PieceEdge(int _pi, int _e) :
-        pi(_pi),
-        e(_e)
-    {}
-
-public:
-    int pi;
-    int e;
-};
-
-void searchPairSide(double rl, int pi);
-
-std::vector<std::vector<PieceEdge>> fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces);
-
-void test();
-
 #endif // ALGORITHMWRAPPER_H
