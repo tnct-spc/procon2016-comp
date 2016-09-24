@@ -551,6 +551,9 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
                 fit_buf.start_id = searching_field_point_number;
                 fit_buf.flame_inner_pos = searching_field_inner_number;
 
+                //save
+                fits.push_back(fit_buf);
+
                 //goto next search ++
 
                 searching_field_point_number++;
@@ -562,6 +565,9 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
                 fit_buf.start_dot_or_line = Fit::Dot;
                 fit_buf.start_id = searching_field_point_number;
                 fit_buf.flame_inner_pos = searching_field_inner_number;
+
+                //save
+                fits.push_back(fit_buf);
 
                 //goto next loop ++
 
