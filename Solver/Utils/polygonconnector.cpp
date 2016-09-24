@@ -383,11 +383,11 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
             }
         }
     }
-	
-	//ay+bx+c=0のa,b,cを記録するLine構造体
+    
+    //ay+bx+c=0のa,b,cを記録するLine構造体
     std::vector<Line> lines;
-		
-	//linesにデータを入れる
+        
+    //linesにデータを入れる
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
         for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size() - 1; k++){
 
@@ -421,12 +421,12 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
 
         }
     }
-	
-	//PointLine構造体:近いポイントとラインの点番号を記録
+    
+    //PointLine構造体:近いポイントとラインの点番号を記録
     std::vector<PointLine> PointLineList;
     std::array<std::vector<bool>,3> hasNearPointLine;
-	
-	//この一つ前で作ったLinesをつかって、点と直線の距離公式を使い距離を求めて近いやつをピックアップ
+    
+    //この一つ前で作ったLinesをつかって、点と直線の距離公式を使い距離を求めて近いやつをピックアップ
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
         for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
 
@@ -479,12 +479,12 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
             }
         }
     }
-	
-	//持っているデータ
+    
+    //持っているデータ
     //PointLine:near line and point
     //pointlist:near point and point
     
-	std::vector<Fit> fits;
+    std::vector<Fit> fits;
 
     Fit fit_buf;
 
@@ -493,8 +493,8 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
     unsigned int searching_field_inner_number = 0;
     unsigned int searching_field_point_number = 0;
 
-	//繋がる部分の始点と終点をサーチする部分
-	//goto多用だけどこっちのほうが見やすいと思う
+    //繋がる部分の始点と終点をサーチする部分
+    //goto多用だけどこっちのほうが見やすいと思う
 
     while(searching_field_inner_number < field.getFlame().getPolygon().inners().size()){
         while(searching_field_point_number < field.getFlame().getPolygon().inners().at(searching_field_inner_number).size()){
@@ -551,10 +551,10 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
 
                 //接してる限りカウント
                 if(!hasNearPoint.at(searching_field_inner_number).at(searching_field_point_number)){
-					//1進んでしまってるのでtrueだったところに戻す
+                    //1進んでしまってるのでtrueだったところに戻す
                     searching_field_point_number--;
 
-					//goto 終点サーチ
+                    //goto 終点サーチ
                     goto endSearch;
                 }
                 searching_field_point_number++;
