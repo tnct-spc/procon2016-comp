@@ -1,5 +1,9 @@
+#include <array>
+#include <cmath>
+
 #include "polygonconnector.h"
 
+#include "fit.h"
 #include "utilities.h"
 
 PolygonConnector::PolygonConnector()
@@ -302,4 +306,276 @@ bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
         }
     }
     return false;
+}
+
+std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, procon::ExpandedPolygon polygon)
+{
+    struct FlameSlope{
+        std::array<double,2> start_point_number;
+        std::array<double,2> end_point_number;
+        double field_slope;
+        double field_y_intercept;
+    };
+    struct point{
+        //bool searchFlag = false;
+        int piece_point_number;
+        std::array<int,2> flame_point_number;
+        point_t flame_point;
+        point_t piece_point;
+    };
+    struct PointLine{
+        std::array<int,2> line_start_point_number;
+        std::array<int,2> line_end_point_number;
+        std::array<int,2> point_number;
+        point_t point;
+    };
+    struct Line{
+        std::array<int,2> line_start_point_number;
+        std::array<int,2> line_end_point_number;
+        double a;
+        double b;
+        double c;
+    };
+    
+
+    std::vector<point> pointlist;
+    std::array<std::vector<bool>,3> hasNearPoint;
+
+    for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
+        for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
+
+            const double flame_x_1 = field.getFlame().getPolygon().inners().at(i).at(k).x();
+            const double flame_y_1 = field.getFlame().getPolygon().inners().at(i).at(k).y();
+
+            for(unsigned int l = 0; l < polygon.getPolygon().outer().size(); l++){
+                for(unsigned int m = 0; m < field.getFlame().getPolygon().inners().size(); m++){
+
+                    const double flame_x_2 = field.getFlame().getPolygon().inners().at(l).at(m).x();
+                    const double flame_y_2 = field.getFlame().getPolygon().inners().at(l).at(m).y();
+
+                    const double distance = (flame_x_1 - flame_x_2) * (flame_x_1 - flame_x_2) + (flame_y_1 - flame_y_2) * (flame_y_1 - flame_y_2);
+
+                    //許容誤差aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                    const double gosaaaaaaaaaaaaaaa = 0.1;
+
+                    if(distance < gosaaaaaaaaaaaaaaa * gosaaaaaaaaaaaaaaa){
+
+                        point point_buffer;
+
+                        std::array<int,2> flame_point_number_buffer;
+
+                        flame_point_number_buffer.at(0) = i;
+                        flame_point_number_buffer.at(1) = k;
+
+                        point_buffer.flame_point_number = flame_point_number_buffer;
+                        point_buffer.piece_point_number = l;
+                        point_buffer.flame_point = point_t(flame_x_1,flame_y_1);
+                        point_buffer.piece_point = point_t(flame_x_2,flame_y_2);
+
+                        //put
+                        pointlist.push_back(point_buffer);
+
+                        hasNearPoint.at(i).push_back(true);
+                    }else{
+                        hasNearPoint.at(i).push_back(false);
+                    }
+                }
+            }
+        }
+    }
+
+    std::vector<Line> lines;
+
+    for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
+        for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size() - 1; k++){
+
+            Line line_buf;
+
+            const double x1 = field.getFlame().getPolygon().inners().at(i).at(k).x();
+            const double y1 = field.getFlame().getPolygon().inners().at(i).at(k).y();
+            const double x2 = field.getFlame().getPolygon().inners().at(i).at(k + 1).y();
+            const double y2 = field.getFlame().getPolygon().inners().at(i).at(k + 1).y();
+
+            const double a = y1 - y2;
+            const double b = x2 - x1;
+            const double c = (-b * y1) + (-a *x1);
+
+            std::array<int,2> line_start_point_number_buf;
+            std::array<int,2> line_end_point_number_buf;
+
+            line_start_point_number_buf.at(0) = i;
+            line_start_point_number_buf.at(1) = k;
+
+            line_end_point_number_buf.at(0) = i;
+            line_end_point_number_buf.at(1) = k + 1;
+
+            line_buf.a = a;
+            line_buf.b = b;
+            line_buf.c = c;
+            line_buf.line_start_point_number = line_start_point_number_buf;
+            line_buf.line_end_point_number = line_end_point_number_buf;
+
+            lines.push_back(line_buf);
+
+        }
+    }
+
+    std::vector<PointLine> PointLineList;
+    std::array<std::vector<bool>,3> hasNearPointLine;
+
+    for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
+        for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
+
+            const double x = field.getFlame().getPolygon().inners().at(i).at(k).x();
+            const double y = field.getFlame().getPolygon().inners().at(i).at(k).y();
+
+            for(auto line : lines){
+
+                const double bunshi = line.a * x + line.b * y + line.c;
+                const double bunbo = line.a * line.a + line.b * line.b;
+
+                const double distance = std::abs(bunshi) / std::sqrt(bunbo);
+
+                const double gosaaaaaaaaaaaaaaaaaaaaaaa = 0.1;
+
+                if(distance < gosaaaaaaaaaaaaaaaaaaaaaaa){
+
+                    PointLine PointLine_Buf;
+
+                    std::array<int,2> start_point_buf;
+                    std::array<int,2> end_point_buf;
+
+                    std::array<int,2> point_number;
+
+                    point_t point_buf = point_t(x,y);
+
+                    start_point_buf.at(0) = line.line_start_point_number.at(0);
+                    start_point_buf.at(1) = line.line_start_point_number.at(1);
+
+                    end_point_buf.at(0) = line.line_end_point_number.at(0);
+                    end_point_buf.at(1) = line.line_end_point_number.at(1);
+
+                    point_number.at(0) = i;
+                    point_number.at(1) = k;
+
+                    PointLine_Buf.line_start_point_number = start_point_buf;
+                    PointLine_Buf.line_end_point_number = end_point_buf;
+                    PointLine_Buf.point_number = point_number;
+                    PointLine_Buf.point = point_buf;
+
+                    PointLineList.push_back(PointLine_Buf);
+
+                    hasNearPointLine.at(i).push_back(true);
+                }else{
+                    hasNearPointLine.at(i).push_back(false);
+                }
+            }
+        }
+    }
+    //PointLine:near line and point
+    //pointlist:near point and point
+    std::vector<Fit> fits;
+
+    Fit fit_buf;
+
+    bool searchFlag = false;
+
+    unsigned int searching_field_inner_number = 0;
+    unsigned int searching_field_point_number = 0;
+
+    while(searching_field_inner_number < field.getFlame().getPolygon().inners().size()){
+        while(searching_field_point_number < field.getFlame().getPolygon().inners().at(searching_field_inner_number).size()){
+
+            nextLoop:;
+            /*
+            if(searching_field_point_number == 0){
+                if(hasNearPoint.at(searching_field_inner_number).at(searching_field_point_number)){
+                    //start is point
+
+                    //put
+                    fit_buf.start_dot_or_line = Fit::Dot;
+                    fit_buf.start_id = searching_field_point_number;
+                    fit_buf.flame_inner_pos = searching_field_inner_number;
+
+                    //goto point search
+                    goto PointSearch;
+                }
+            }
+            */
+            if(hasNearPoint.at(searching_field_inner_number).at(searching_field_point_number)){
+                //start is point
+
+                //put
+                fit_buf.start_dot_or_line = Fit::Dot;
+                fit_buf.start_id = searching_field_point_number;
+                fit_buf.flame_inner_pos = searching_field_inner_number;
+
+                //goto point continue search
+                goto PointSearch;
+
+            }else{
+                if(hasNearPointLine.at(searching_field_inner_number).at(searching_field_point_number)){
+                    //start is line
+
+                    fit_buf.start_dot_or_line = Fit::Line;
+                    fit_buf.start_id = searching_field_point_number;
+                    fit_buf.flame_inner_pos = searching_field_inner_number;
+
+                    goto PointSearch;
+                }
+                //search next ++
+                searching_field_point_number++;
+
+                goto nextLoop;
+            }
+
+
+            while(1){
+
+                PointSearch:;
+
+                //接してる限りカウント
+                if(!hasNearPoint.at(searching_field_inner_number).at(searching_field_point_number)){
+                    searching_field_point_number--;
+                    goto endSearch;
+                }
+                searching_field_point_number++;
+            }
+
+            //最後に接してるのが点か線か確かめる
+            endSearch:;
+            if(hasNearPointLine.at(searching_field_inner_number).at(searching_field_point_number)){
+                //end is line
+
+                fit_buf.start_dot_or_line = Fit::Line;
+                fit_buf.start_id = searching_field_point_number;
+                fit_buf.flame_inner_pos = searching_field_inner_number;
+
+                //goto next search ++
+
+                searching_field_point_number++;
+                goto nextLoop;
+
+            }else{
+                //end is point
+
+                fit_buf.start_dot_or_line = Fit::Dot;
+                fit_buf.start_id = searching_field_point_number;
+                fit_buf.flame_inner_pos = searching_field_inner_number;
+
+                //goto next loop ++
+
+                searching_field_point_number++;
+                goto nextLoop;
+
+            }
+
+        }
+        searching_field_inner_number++;
+    }
+
+
+
+
+    return fits;
 }
