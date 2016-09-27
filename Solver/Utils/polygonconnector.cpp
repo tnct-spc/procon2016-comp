@@ -308,7 +308,7 @@ bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
     return false;
 }
 
-std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, procon::ExpandedPolygon polygon)
+Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::ExpandedPolygon polygon)
 {
     struct FlameSlope{
         std::array<double,2> start_point_number;
@@ -347,11 +347,10 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
             const double flame_x_1 = field.getFlame().getPolygon().inners().at(i).at(k).x();
             const double flame_y_1 = field.getFlame().getPolygon().inners().at(i).at(k).y();
 
-            for(unsigned int l = 0; l < polygon.getPolygon().outer().size(); l++){
-                for(unsigned int m = 0; m < field.getFlame().getPolygon().inners().size(); m++){
+            for(unsigned int l = 0; l < field.getFlame().getPolygon().inners().at(i).size(); l++){
 
-                    const double flame_x_2 = field.getFlame().getPolygon().inners().at(l).at(m).x();
-                    const double flame_y_2 = field.getFlame().getPolygon().inners().at(l).at(m).y();
+                    const double flame_x_2 = field.getFlame().getPolygon().inners().at(i).at(l).x();
+                    const double flame_y_2 = field.getFlame().getPolygon().inners().at(i).at(l).y();
 
                     const double distance = (flame_x_1 - flame_x_2) * (flame_x_1 - flame_x_2) + (flame_y_1 - flame_y_2) * (flame_y_1 - flame_y_2);
 
@@ -379,7 +378,6 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
                     }else{
                         hasNearPoint.at(i).push_back(false);
                     }
-                }
             }
         }
     }
@@ -540,7 +538,8 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
                 //search next ++
                 searching_field_point_number++;
 
-                goto nextLoop;
+                return fit_buf;
+                //goto nextLoop;
             }
 
 
@@ -577,7 +576,8 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
 
                 searching_field_point_number++;
 
-                goto nextLoop;
+                return fit_buf;
+                //goto nextLoop;
 
             }else{
                 //end is point
@@ -593,7 +593,8 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
 
                 searching_field_point_number++;
 
-                goto nextLoop;
+                return fit_buf;
+                //goto nextLoop;
 
             }
 
@@ -604,5 +605,5 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
 
 
 
-    return fits;
+    //return fits;
 }
