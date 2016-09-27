@@ -424,7 +424,7 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
     
     //PointLine構造体:近いポイントとラインの点番号を記録
     std::vector<PointLine> PointLineList;
-    std::array<std::vector<bool>,3> hasNearPointLine;
+    std::vector<std::vector<bool>> hasNearPointLine;
     
     //この一つ前で作ったLinesをつかって、点と直線の距離公式を使い距離を求めて近いやつをピックアップ
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
@@ -488,7 +488,6 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
 
     Fit fit_buf;
 
-    bool searchFlag = false;
 
     unsigned int searching_field_inner_number = 0;
     unsigned int searching_field_point_number = 0;
@@ -551,6 +550,7 @@ std::vector<Fit> PolygonConnector::searchFieldConnection(procon::Field field, pr
 
                 //接してる限りカウント
                 if(!hasNearPoint.at(searching_field_inner_number).at(searching_field_point_number)){
+
                     //1進んでしまってるのでtrueだったところに戻す
                     searching_field_point_number--;
 
