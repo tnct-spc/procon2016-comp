@@ -317,21 +317,31 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
         double field_y_intercept;
     };
     struct point{
-        //bool searchFlag = false;
-        int piece_point_number;
-        std::array<int,2> flame_point_number;
+        //１つめの点のinners.at().at(ココ)
+        int flame_point_number_1;
+        int flame_point_number_2;
+        int flame_inner_position;
+
         point_t flame_point;
         point_t piece_point;
     };
     struct PointLine{
-        std::array<int,2> line_start_point_number;
-        std::array<int,2> line_end_point_number;
-        std::array<int,2> point_number;
+
+        int inner_position;
+
+        int line_start_point_number;
+        int line_end_point_number;
+
+        int point_number;
+
         point_t point;
     };
     struct Line{
-        std::array<int,2> line_start_point_number;
-        std::array<int,2> line_end_point_number;
+
+        int line_inner_position;
+        int line_start_point_number;
+        int line_end_point_number;
+
         double a;
         double b;
         double c;
@@ -339,7 +349,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
     
 
     std::vector<point> pointlist;
-    std::array<std::vector<bool>,3> hasNearPoint;
+    std::vector<std::vector<bool>> hasNearPoint;
 
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
         for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
@@ -349,45 +359,46 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
             for(unsigned int l = 0; l < field.getFlame().getPolygon().inners().at(i).size(); l++){
 
-                    const double flame_x_2 = field.getFlame().getPolygon().inners().at(i).at(l).x();
-                    const double flame_y_2 = field.getFlame().getPolygon().inners().at(i).at(l).y();
+                const double flame_x_2 = field.getFlame().getPolygon().inners().at(i).at(l).x();
+                const double flame_y_2 = field.getFlame().getPolygon().inners().at(i).at(l).y();
 
-                    const double distance = (flame_x_1 - flame_x_2) * (flame_x_1 - flame_x_2) + (flame_y_1 - flame_y_2) * (flame_y_1 - flame_y_2);
+                const double distance = (flame_x_1 - flame_x_2) * (flame_x_1 - flame_x_2) + (flame_y_1 - flame_y_2) * (flame_y_1 - flame_y_2);
 
-                    //許容誤差aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-                    const double gosaaaaaaaaaaaaaaa = 0.1;
+                //許容誤差aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                const double gosaaaaaaaaaaaaaaa = 0.1;
 
-                    if(distance < gosaaaaaaaaaaaaaaa * gosaaaaaaaaaaaaaaa){
+                if(distance < gosaaaaaaaaaaaaaaa * gosaaaaaaaaaaaaaaa){
 
-                        point point_buffer;
+                    point point_buffer;
 
-                        std::array<int,2> flame_point_number_buffer;
+                    point_buffer.flame_inner_position = i;
+                    point_buffer.flame_point_number_1 = k;
+                    point_buffer.flame_point_number_2 = l;
+                    point_buffer.flame_point = point_t(flame_x_1,flame_y_1);
+                    point_buffer.piece_point = point_t(flame_x_2,flame_y_2);
 
-                        flame_point_number_buffer.at(0) = i;
-                        flame_point_number_buffer.at(1) = k;
+                    //put
+                    pointlist.push_back(point_buffer);
 
-                        point_buffer.flame_point_number = flame_point_number_buffer;
-                        point_buffer.piece_point_number = l;
-                        point_buffer.flame_point = point_t(flame_x_1,flame_y_1);
-                        point_buffer.piece_point = point_t(flame_x_2,flame_y_2);
+                    hasNearPoint.at(i).push_back(true);
 
-                        //put
-                        pointlist.push_back(point_buffer);
+                }else{
 
-                        hasNearPoint.at(i).push_back(true);
-                    }else{
-                        hasNearPoint.at(i).push_back(false);
-                    }
+                    hasNearPoint.at(i).push_back(false);
+
+                }
             }
         }
     }
     
     //ay+bx+c=0のa,b,cを記録するLine構造体
     std::vector<Line> lines;
+
+
         
     //linesにデータを入れる
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
-        for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size() - 1; k++){
+        for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
 
             Line line_buf;
 
@@ -398,22 +409,18 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
             const double a = y1 - y2;
             const double b = x2 - x1;
-            const double c = (-b * y1) + (-a *x1);
+            const double c = (-b * y1) + (-a * x1);
 
-            std::array<int,2> line_start_point_number_buf;
-            std::array<int,2> line_end_point_number_buf;
+            //put start and end information
+            line_buf.line_inner_position = i;
+            line_buf.line_start_point_number = k;
+            line_buf.line_end_point_number = k + 1;
 
-            line_start_point_number_buf.at(0) = i;
-            line_start_point_number_buf.at(1) = k;
-
-            line_end_point_number_buf.at(0) = i;
-            line_end_point_number_buf.at(1) = k + 1;
-
+            //put calc result
             line_buf.a = a;
             line_buf.b = b;
             line_buf.c = c;
-            line_buf.line_start_point_number = line_start_point_number_buf;
-            line_buf.line_end_point_number = line_end_point_number_buf;
+
 
             lines.push_back(line_buf);
 
@@ -433,44 +440,51 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
             for(auto line : lines){
 
-                const double bunshi = line.a * x + line.b * y + line.c;
-                const double bunbo = line.a * line.a + line.b * line.b;
+                //同じinnerをサーチしている時だけtrue
+                //elseではfalseをpush_backする
 
-                const double distance = std::abs(bunshi) / std::sqrt(bunbo);
+                if(line.line_inner_position == i){
 
-                const double gosaaaaaaaaaaaaaaaaaaaaaaa = 0.1;
+                    const double bunshi = line.a * x + line.b * y + line.c;
+                    const double bunbo = line.a * line.a + line.b * line.b;
 
-                if(distance < gosaaaaaaaaaaaaaaaaaaaaaaa){
+                    const double distance = std::abs(bunshi) / std::sqrt(bunbo);
 
-                    PointLine PointLine_Buf;
+                    const double gosaaaaaaaaaaaaaaaaaaaaaaa = 0.1;
 
-                    std::array<int,2> start_point_buf;
-                    std::array<int,2> end_point_buf;
+                    if(distance < gosaaaaaaaaaaaaaaaaaaaaaaa){
 
-                    std::array<int,2> point_number;
+                        PointLine PointLine_Buf;
 
-                    point_t point_buf = point_t(x,y);
 
-                    start_point_buf.at(0) = line.line_start_point_number.at(0);
-                    start_point_buf.at(1) = line.line_start_point_number.at(1);
+                        point_t point_buf = point_t(x,y);
 
-                    end_point_buf.at(0) = line.line_end_point_number.at(0);
-                    end_point_buf.at(1) = line.line_end_point_number.at(1);
+                        //put line information
+                        PointLine_Buf.line_start_point_number = line.line_start_point_number;
+                        PointLine_Buf.line_end_point_number = line.line_end_point_number;
+                        PointLine_Buf.inner_position = line.line_inner_position;
 
-                    point_number.at(0) = i;
-                    point_number.at(1) = k;
+                        //put point information
+                        PointLine_Buf.point_number = k;
 
-                    PointLine_Buf.line_start_point_number = start_point_buf;
-                    PointLine_Buf.line_end_point_number = end_point_buf;
-                    PointLine_Buf.point_number = point_number;
-                    PointLine_Buf.point = point_buf;
+                        //put point
+                        PointLine_Buf.point = point_buf;
 
-                    PointLineList.push_back(PointLine_Buf);
+                        PointLineList.push_back(PointLine_Buf);
 
-                    hasNearPointLine.at(i).push_back(true);
+                        //true:has near point
+                        hasNearPointLine.at(i).push_back(true);
+
+                    }else{
+
+                        //false:has no near point
+                        hasNearPointLine.at(i).push_back(false);
+
+                    }
 
                 }else{
 
+                    //innerが違うのでfalseを入れて次へ
                     hasNearPointLine.at(i).push_back(false);
 
                 }
@@ -479,13 +493,13 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
     }
     
     //持っているデータ
+    //if yout want to use this data,please comment out ... in this function
+
     //PointLine:near line and point
     //pointlist:near point and point
     
-    std::vector<Fit> fits;
 
     Fit fit_buf;
-
 
     unsigned int searching_field_inner_number = 0;
     unsigned int searching_field_point_number = 0;
@@ -496,7 +510,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
     while(searching_field_inner_number < field.getFlame().getPolygon().inners().size()){
         while(searching_field_point_number < field.getFlame().getPolygon().inners().at(searching_field_inner_number).size()){
 
-            nextLoop:;
+            //nextLoop:;
 
             /*
             if(searching_field_point_number == 0){
@@ -534,12 +548,15 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
                     fit_buf.flame_inner_pos = searching_field_inner_number;
 
                     goto PointSearch;
-                }
-                //search next ++
-                searching_field_point_number++;
 
-                return fit_buf;
-                //goto nextLoop;
+                }else{
+
+                    //search next ++
+                    searching_field_point_number++;
+
+                    //goto nextLoop;
+
+                }
             }
 
 
@@ -569,14 +586,14 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
                 fit_buf.start_id = searching_field_point_number;
                 fit_buf.flame_inner_pos = searching_field_inner_number;
 
-                //save
-                fits.push_back(fit_buf);
 
                 //goto next search ++
 
                 searching_field_point_number++;
 
+                //return result
                 return fit_buf;
+
                 //goto nextLoop;
 
             }else{
@@ -586,14 +603,14 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
                 fit_buf.start_id = searching_field_point_number;
                 fit_buf.flame_inner_pos = searching_field_inner_number;
 
-                //save
-                fits.push_back(fit_buf);
 
                 //goto next loop ++
 
                 searching_field_point_number++;
 
+                //return result
                 return fit_buf;
+
                 //goto nextLoop;
 
             }
