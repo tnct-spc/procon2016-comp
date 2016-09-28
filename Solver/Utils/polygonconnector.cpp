@@ -310,12 +310,14 @@ bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
 
 Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::ExpandedPolygon polygon)
 {
+
     struct FlameSlope{
         std::array<double,2> start_point_number;
         std::array<double,2> end_point_number;
         double field_slope;
         double field_y_intercept;
     };
+
     struct point{
         //１つめの点のinners.at().at(ココ)
         int flame_point_number_1;
@@ -325,6 +327,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
         point_t flame_point;
         point_t piece_point;
     };
+
     struct PointLine{
 
         int inner_position;
@@ -336,6 +339,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
         point_t point;
     };
+
     struct Line{
 
         int line_inner_position;
@@ -350,6 +354,8 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
     std::vector<point> pointlist;
     std::vector<std::vector<bool>> hasNearPoint;
+
+    point point_buffer;
 
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
         for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
@@ -369,7 +375,6 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
                 if(distance < gosaaaaaaaaaaaaaaa * gosaaaaaaaaaaaaaaa){
 
-                    point point_buffer;
 
                     point_buffer.flame_inner_position = i;
                     point_buffer.flame_point_number_1 = k;
@@ -394,13 +399,12 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
     //ay+bx+c=0のa,b,cを記録するLine構造体
     std::vector<Line> lines;
 
-
+    Line line_buf;
         
     //linesにデータを入れる
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
         for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
 
-            Line line_buf;
 
             const double x1 = field.getFlame().getPolygon().inners().at(i).at(k).x();
             const double y1 = field.getFlame().getPolygon().inners().at(i).at(k).y();
@@ -430,6 +434,9 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
     //PointLine構造体:近いポイントとラインの点番号を記録
     std::vector<PointLine> PointLineList;
     std::vector<std::vector<bool>> hasNearPointLine;
+
+    point_t point_buf;
+    PointLine PointLine_Buf;
     
     //この一つ前で作ったLinesをつかって、点と直線の距離公式を使い距離を求めて近いやつをピックアップ
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
@@ -454,10 +461,8 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
                     if(distance < gosaaaaaaaaaaaaaaaaaaaaaaa){
 
-                        PointLine PointLine_Buf;
 
-
-                        point_t point_buf = point_t(x,y);
+                        point_buf = point_t(x,y);
 
                         //put line information
                         PointLine_Buf.line_start_point_number = line.line_start_point_number;
