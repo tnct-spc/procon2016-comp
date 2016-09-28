@@ -22,7 +22,7 @@ private:
     static Ring popRingByPolygon(procon::ExpandedPolygon& polygon, int inner_position = -1);
     static void pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& polygon, int inner_position = -1);
     static bool hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2);
-    static Fit searchFieldConnection(procon::Field field,procon::ExpandedPolygon polygon);
+    static Fit searchFieldConnection(procon::Field field, bool succeeded);
 };
 
 #endif // POLYGONCONNECTOR_H

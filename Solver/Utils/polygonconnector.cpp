@@ -308,7 +308,7 @@ bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
     return false;
 }
 
-Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::ExpandedPolygon polygon)
+Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
 {
 
     struct FlameSlope{
@@ -320,9 +320,9 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
     struct point{
         //１つめの点のinners.at().at(ココ)
-        int flame_point_number_1;
-        int flame_point_number_2;
-        int flame_inner_position;
+        unsigned int flame_point_number_1;
+        unsigned int flame_point_number_2;
+        unsigned int flame_inner_position;
 
         point_t flame_point;
         point_t piece_point;
@@ -330,21 +330,21 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
 
     struct PointLine{
 
-        int inner_position;
+        unsigned int inner_position;
 
-        int line_start_point_number;
-        int line_end_point_number;
+        unsigned int line_start_point_number;
+        unsigned int line_end_point_number;
 
-        int point_number;
+        unsigned int point_number;
 
         point_t point;
     };
 
     struct Line{
 
-        int line_inner_position;
-        int line_start_point_number;
-        int line_end_point_number;
+        unsigned int line_inner_position;
+        unsigned int line_start_point_number;
+        unsigned int line_end_point_number;
 
         double a;
         double b;
@@ -496,6 +496,52 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
             }
         }
     }
+
+
+    ///Check has Near Point or Line
+
+    //has NearPoint or Line
+
+    for(unsigned int i = 0; i < hasNearPoint.size(); i++){
+        for(unsigned int  l = 0; l < hasNearPoint.at(i).size(); l++){
+
+            if(hasNearPoint.at(i).at(l) == true){
+
+                succeeded = true;
+
+                break;
+
+            }
+        }
+    }
+
+    for(unsigned int i = 0; i < hasNearPointLine.size(); i++){
+        for(unsigned int  l = 0; l < hasNearPointLine.at(i).size(); l++){
+
+            if(hasNearPointLine.at(i).at(l) == true){
+
+                succeeded = true;
+
+                break;
+
+            }
+        }
+    }
+
+    //do not have near point or line
+    if(succeeded == false){
+
+        succeeded = false;
+
+        Fit empty_fit;
+
+        return empty_fit;
+
+    }
+
+
+
+
     
     //持っているデータ
     //if yout want to use this data,please comment out ... in this function
@@ -625,7 +671,10 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field, procon::Expande
     }
 
 
+    //to delete warning
+    Fit emptyFit;
+    succeeded = false;
 
+    return emptyFit;
 
-    //return fits;
 }
