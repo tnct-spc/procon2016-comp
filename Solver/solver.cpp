@@ -6,6 +6,7 @@
 #include "Algorithm/hillclibming.h"
 #include "Algorithm/beamsearch.h"
 #include "Algorithm/beamsearchbylength.h"
+#include "Algorithm/chokudaisearch.h"
 
 Solver::Solver()
 {
@@ -19,8 +20,10 @@ procon::Field Solver::run(procon::Field field, int algorithm_number)
     Algorithms.push_back(new HillClibming());
     Algorithms.push_back(new BeamSearch());
     Algorithms.push_back(new BeamSearchByLength());
+    Algorithms.push_back(new ChokudaiSearch());
 
-    procon::Field result = Algorithms.at(algorithm_number)->run(field);
+    //procon::Field result = Algorithms.at(algorithm_number)->run(field);
+    procon::Field result = Algorithms.at(5)->run(field);
 
     for(auto algo : Algorithms) delete(algo);
     Algorithms.clear();

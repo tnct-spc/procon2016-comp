@@ -20,12 +20,14 @@ SOURCES += main.cpp\
     testdisplayanswer.cpp \
     testjoinpolygon.cpp \
     testerwraper.cpp \
-    testsearchsamelength.cpp
+    testsearchsamelength.cpp \
+    testutilities.cpp
 
 HEADERS += testdisplayanswer.h\
     testjoinpolygon.h \
     testerwraper.h \
-    testsearchsamelength.h
+    testsearchsamelength.h \
+    testutilities.h
 
 unix:!macx: LIBS += -L$$OUT_PWD/../Polygon/ -lPolygon
 INCLUDEPATH += $$PWD/../Polygon
@@ -58,9 +60,9 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../Polygon/debug/ -
 else:unix: LIBS += -L$$OUT_PWD/../Polygon/ -lPolygon
 
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../ImageRecognition/release/ -lImageRecognition
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../ImageRecognition/debug/ -lImageRecognition
-else:unix: LIBS += -L$$OUT_PWD/../ImageRecognition/ -lImageRecognition
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../Utilities/release/ -lUtilities
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../Utilities/debug/ -lUtilities
+else:unix: LIBS += -L$$OUT_PWD/../Utilities/ -lUtilities
 
-INCLUDEPATH += $$PWD/../ImageRecognition
-DEPENDPATH += $$PWD/../ImageRecognition
+INCLUDEPATH += $$PWD/../Utilities
+DEPENDPATH += $$PWD/../Utilities

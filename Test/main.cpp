@@ -5,6 +5,7 @@
 #include "testdisplayanswer.h"
 #include "testjoinpolygon.h"
 #include "testsearchsamelength.h"
+#include "testutilities.h"
 
 int Test()
 {
@@ -15,6 +16,7 @@ int Test()
     TESTER.push_back(new TestDisplayAnswer);
     TESTER.push_back(new TestJoinPolygon);
     TESTER.push_back(new testSearchSameLength);
+    TESTER.push_back(new TestUtilities);
 
     for(auto tester : TESTER){
         if(!tester->run()){

@@ -9,9 +9,9 @@ class BeamSearch : public AlgorithmWrapper
 private:
 protected:
     //ビーム幅
-    const double beam_width = 1000;
+    double beam_width;
     int cpu_num;
-    void initialization();
+    virtual void initialization();
     virtual void evaluateNextMove
     (std::vector<Evaluation> & evaluations,std::vector<procon::Field> const& field_vec);
     virtual std::vector<procon::Field> makeNextField
@@ -20,7 +20,7 @@ protected:
     bool canPrune(procon::ExpandedPolygon const& next_frame ,double const& min_angle);
 public:
     BeamSearch();
-    procon::Field run(procon::Field field);
+    virtual procon::Field run(procon::Field field);
 };
 
 

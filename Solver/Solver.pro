@@ -28,7 +28,8 @@ SOURCES += solver.cpp \
     Utils/evaluation.cpp \
     Algorithm/beamsearch.cpp \
     Evaluation/searchsamelength.cpp \
-    Algorithm/beamsearchbylength.cpp
+    Algorithm/beamsearchbylength.cpp \
+    Algorithm/chokudaisearch.cpp
 
 HEADERS += solver.h\
         solver_global.h \
@@ -41,7 +42,8 @@ HEADERS += solver.h\
     Utils/evaluation.h \
     Algorithm/beamsearch.h \
     Evaluation/searchsamelength.h \
-    Algorithm/beamsearchbylength.h
+    Algorithm/beamsearchbylength.h \
+    Algorithm/chokudaisearch.h
 
 unix {
     target.path = /usr/lib

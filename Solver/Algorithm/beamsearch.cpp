@@ -13,6 +13,7 @@ BeamSearch::BeamSearch()
 
 void BeamSearch::initialization()
 {
+    beam_width = 1000;
     cpu_num = std::thread::hardware_concurrency();
 }
 
