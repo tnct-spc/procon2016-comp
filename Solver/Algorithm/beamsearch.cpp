@@ -90,10 +90,14 @@ std::vector<procon::Field> BeamSearch::makeNextField (std::vector<Evaluation> co
                 procon::Field new_field = field_vec.at(vec_id);
                 new_field.setFrame(new_frame);
                 new_field.setIsPlaced(piece_id);
+                new_field.eva_sum = evaluations.at(j).evaluation * old_frame.getJointedPieces().size();
 
                 {
                     MUTEX_LOCK(parallel);
-                    next_field_vec.push_back(new_field);
+                    bool flag=false;
+                    if(flag==false){
+                        next_field_vec.push_back(new_field);
+                    }
                 }
             }
         }

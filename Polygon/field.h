@@ -24,6 +24,9 @@ private:
     double min_side;
 
 public:
+    //public member
+    int eva_sum=0;
+
     //constructor
     Field();
 
