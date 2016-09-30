@@ -16,10 +16,10 @@ bool testSearchSameLength::run(){
         procon::ExpandedPolygon result;
 
         polygon_t sample11;
-        sample11.outer().push_back(point_t(0,20));
-        sample11.outer().push_back(point_t(5,10));
-        sample11.outer().push_back(point_t(0,0));
-        sample11.outer().push_back(point_t(-5,30));
+        sample11.outer().push_back(point_t(0.00000001,20.00000001));
+        sample11.outer().push_back(point_t(5.00000001,10.00000001));
+        sample11.outer().push_back(point_t(0.00000001,0.00000001));
+        sample11.outer().push_back(point_t(-5.00000001,30.00000001));
         sample11.outer().push_back(point_t(10,30));
         sample11.outer().push_back(point_t(0,20));
 

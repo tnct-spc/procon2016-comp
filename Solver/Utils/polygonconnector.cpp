@@ -308,8 +308,9 @@ bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
     return false;
 }
 
-Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
+Fit PolygonConnector::searchFieldConnection(procon::Field field)
 {
+    bool succeeded = false;
 
     struct FlameSlope{
         std::array<double,2> start_point_number;
@@ -328,6 +329,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
         point_t piece_point;
     };
 
+
     struct PointLine{
 
         unsigned int inner_position;
@@ -337,33 +339,452 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
 
         unsigned int point_number;
 
-        point_t point;
+        //point_t point;
     };
 
+
     struct Line{
-
-        unsigned int line_inner_position;
-        unsigned int line_start_point_number;
-        unsigned int line_end_point_number;
-
         double a;
         double b;
         double c;
     };
-    
 
+
+    auto calcPointToPointDistance = [](point_t start,point_t end){
+        return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+    };
+
+
+
+
+
+    auto CalcLineToDistance = [](point_t a,point_t b,point_t c)->double{
+
+        struct Vec2d{
+            double x;
+            double y;
+        };
+
+        //naiseki
+        auto Dot = [](Vec2d a,Vec2d b)->double{
+            return a.x * b.x + a.y + b.y;
+        };
+
+        //gaiseki
+        auto Cross = [](Vec2d a,Vec2d b)->double{
+            return a.x * b.y - a.y * b.x;
+        };
+
+        auto calcVec = [](point_t a,point_t b)->Vec2d{
+            Vec2d vec;
+            vec.x = b.x() - a.x();
+            vec.y = b.y() - a.y();
+
+            return vec;
+        };
+
+        auto calcLineABC = [](point_t start,point_t end)->Line{
+
+            Line line;
+
+            line.a = start.y() - end.y();
+            line.b = end.x() - start.x();
+            line.c = (line.b * start.y()) + (line.a * start.x());
+
+            /*
+            const double a = y1 - y2;
+            const double b = x2 - x1;
+            const double c = (-b * y1) + (-a * x1);
+            */
+
+            return line;
+        };
+
+        auto calcPointToLineDistance = [](point_t point,Line line){
+
+            line.c = 0;
+
+            const double bunshi = line.a * point.x() + line.b * point.y() + line.c;
+            const double bunbo = line.a * line.a + line.b * line.b;
+
+            const double distance = bunshi * bunshi / bunbo;
+
+            return distance;
+        };
+
+        if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
+
+            std::cout << "out of hani" << std::endl;
+
+        }
+
+        if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
+
+            std::cout << "out of hani" << std::endl;
+
+        }
+
+        Line line = calcLineABC(a,b);
+
+        const double distance = calcPointToLineDistance(c,line);
+
+        return distance;
+
+    };
+
+
+    auto goOkerutokoromade = [](procon::Field field,unsigned int searching_point_main_number,unsigned int ){
+
+
+
+    }
+
+    constexpr double gosaaaaaaaaa = 0.1;
+
+    bool can_connect = false;
+
+    bool FirstPointHasNearPoint = false;
+
+
+
+
+    for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
+
+        Fit fit_buf;
+
+        unsigned int point_number_at_0 = 0;
+
+        //check line 1 and point 1 have near point
+        for(unsigned int k = 1; k < field.getFlame().getPolygon().inners().at(i).size() - 1; k++){
+
+            const double distance = calcPointToPointDistance(field.getFlame().getPolygon().inners().at(i).at(0)
+                                                             ,field.getFlame().getPolygon().inners().at(i).at(k));
+
+
+
+            //distance equals real-distance squared
+            if(distance < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                FirstPointHasNearPoint = true;
+
+                point_number_at_0 = k;
+
+                break;
+
+            }
+        }
+
+
+        if(FirstPointHasNearPoint){
+
+
+            //0番目の点が接していた点の番号
+            unsigned int searching_main_point_number = 1;
+            unsigned int searching_sub_point_numebr = point_number_at_0;
+
+            double distance = 0;
+
+
+            searching_main_point_number = field.getFlame().getPolygon().inners().at(i).size() - 1;
+
+            while(1){
+
+                distance = calcPointToPointDistance(field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number)
+                                                    ,field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_numebr));
+
+                if(!(distance < gosaaaaaaaaa * gosaaaaaaaaa)){
+
+                    //1,行き過ぎてるので戻す
+                    ++searching_main_point_number;
+                    ++searching_sub_point_numebr;
+
+                    break;
+
+                }
+
+                searching_main_point_number = searching_main_point_number - 1;
+                searching_sub_point_numebr = searching_sub_point_numebr - 1;
+
+            }
+
+            const double distance1 = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number)
+                                                        ,field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number - 1)
+                                                        ,field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_numebr - 1));
+
+            const double distance2 = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_numebr)
+                                                        ,field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_numebr - 1)
+                                                        ,field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number - 1));
+
+
+            if(distance1 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                fit_buf.flame_inner_pos = i;
+                fit_buf.start_dot_or_line = Fit::Line;
+                fit_buf.start_id = searching_main_point_number - 1;
+
+                can_connect = true;
+
+                return fit_buf;
+
+            }else if(distance2 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                fit_buf.flame_inner_pos = i;
+                fit_buf.start_dot_or_line = Fit::Line;
+                fit_buf.start_id = searching_main_point_number - 1;
+
+                can_connect = true;
+
+                return fit_buf;
+
+            }else{
+
+                fit_buf.flame_inner_pos = i;
+                fit_buf.start_dot_or_line = Fit::Dot;
+                fit_buf.start_id = searching_main_point_number;
+
+                can_connect = true;
+
+                return fit_buf;
+
+            }
+
+
+        }else{
+
+            unsigned int first_line_number;
+
+            bool FirstPointLineHasNearPoint = false;
+
+            for(int k = 1; k < field.getFlame().getPolygon().inners().at(i).size() - 1; k++){
+
+                const double distanceLine = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(0),field.getFlame().getPolygon().inners().at(i).at(1),field.getFlame().getPolygon().inners().at(i).at(k));
+
+                if(distanceLine < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                    FirstPointLineHasNearPoint = true;
+
+
+
+                    first_line_number = k;
+
+                    fit_buf.start_id = 0;
+                    fit_buf.start_dot_or_line = Fit::Line;
+                    fit_buf.flame_inner_pos = i;
+
+                    break;
+
+                }
+
+            }
+
+            if(FirstPointLineHasNearPoint){
+
+                unsigned int searching_main_point_number = 1;
+                unsigned int searching_sub_point_number ;
+
+                double distance = 0;
+
+
+                while(1){
+
+                    distance = calcPointToPointDistance(field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number)
+                                                        ,field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_number));
+
+                    if(!(distance < gosaaaaaaaaa * gosaaaaaaaaa)){
+
+                        //1,行き過ぎてるので戻す
+                        --searching_main_point_number;
+                        --searching_sub_point_number;
+
+                         break;
+
+                    }
+
+                    searching_main_point_number = searching_main_point_number + 1;
+                    searching_sub_point_number = searching_sub_point_number + 1;
+
+                }
+
+                const double distance1 = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number + 1)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_number + 1));
+
+                const double distance2 = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_number)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_sub_point_number + 1)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_main_point_number + 1));
+
+
+                if(distance1 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                    fit_buf.flame_inner_pos = i;
+                    fit_buf.end_dot_or_line = Fit::Line;
+                    fit_buf.end_id = searching_main_point_number;
+
+                    return fit_buf;
+
+                }else if(distance2 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                    fit_buf.flame_inner_pos = i;
+                    fit_buf.end_dot_or_line = Fit::Line;
+                    fit_buf.end_id = searching_main_point_number;
+
+                    return fit_buf;
+
+                }else{
+
+                    fit_buf.flame_inner_pos = i;
+                    fit_buf.end_dot_or_line = Fit::Dot;
+                    fit_buf.end_id = searching_main_point_number;
+
+                    return fit_buf;
+                }
+
+            }else{
+
+                unsigned int searching_point_main_number;
+                unsigned int searching_point_sub_number;
+
+                [&](){
+                for(unsigned int k = 1; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
+
+                    for(unsigned int l = k + 1; l < field.getFlame().getPolygon().inners().at(i).size(); l++){
+
+                        const double distance1 = calcPointToPointDistance(field.getFlame().getPolygon().inners().at(i).at(k)
+                                                                          ,field.getFlame().getPolygon().inners().at(i).at(l));
+
+                        if(distance1 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                            fit_buf.start_dot_or_line = Fit::Dot;
+                            fit_buf.start_id = k;
+                            fit_buf.flame_inner_pos = i;
+
+                            searching_point_main_number = k;
+                            searching_point_sub_number = l;
+
+
+                            return;
+                        }
+
+
+                        const double distance2 = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(k)
+                                                                   ,field.getFlame().getPolygon().inners().at(i).at(k+1)
+                                                                   ,field.getFlame().getPolygon().inners().at(i).at(l));
+
+                        if(distance2 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                            fit_buf.start_dot_or_line = Fit::Dot;
+                            fit_buf.start_id = k;
+                            fit_buf.flame_inner_pos = i;
+
+                            searching_point_main_number = k;
+                            searching_point_sub_number = l;
+
+
+                            return;
+
+                        }
+
+
+
+                    }
+
+
+                }
+                }();
+
+                double distance = 0;
+
+                while(1){
+
+                    distance = calcPointToPointDistance(field.getFlame().getPolygon().inners().at(i).at(searching_point_main_number)
+                                                        ,field.getFlame().getPolygon().inners().at(i).at(searching_point_sub_number));
+
+                    if(!(distance < gosaaaaaaaaa * gosaaaaaaaaa)){
+
+                        //1,行き過ぎてるので戻す
+                        --searching_point_main_number;
+                        --searching_point_sub_number;
+
+                         break;
+
+                    }
+
+                    searching_point_main_number = searching_point_main_number + 1;
+                    searching_point_sub_number = searching_point_sub_number + 1;
+
+                }
+
+                const double distance1 = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(searching_point_main_number)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_point_main_number + 1)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_point_sub_number + 1));
+
+                const double distance2 = CalcLineToDistance(field.getFlame().getPolygon().inners().at(i).at(searching_point_sub_number)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_point_sub_number + 1)
+                                                            ,field.getFlame().getPolygon().inners().at(i).at(searching_point_main_number + 1));
+
+
+                if(distance1 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                    fit_buf.flame_inner_pos = i;
+                    fit_buf.end_dot_or_line = Fit::Line;
+                    fit_buf.end_id = searching_point_main_number;
+
+                    can_connect = true;
+
+                    return fit_buf;
+
+
+                }else if(distance2 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                    fit_buf.flame_inner_pos = i;
+                    fit_buf.end_dot_or_line = Fit::Line;
+                    fit_buf.end_id = searching_point_main_number;
+
+                    can_connect = true;
+
+                    return fit_buf;
+
+
+                }else{
+
+                    fit_buf.flame_inner_pos = i;
+                    fit_buf.end_dot_or_line = Fit::Dot;
+                    fit_buf.end_id = searching_point_main_number;
+
+                    can_connect = true;
+
+                    return fit_buf;
+                }
+
+            }
+
+        }
+
+    }
+
+    if(can_connect){
+        std::cout << "yabai" << std::endl;
+    }else{
+        std::cout << "koredosuru?" << std::endl;
+    }
+
+
+
+    /*
     std::vector<point> pointlist;
-    std::vector<std::vector<bool>> hasNearPoint;
+    std::vector<std::vector<bool>> hasNearPoint(10);
+    //std::vector<bool> hasNearPoint_buf;
 
     point point_buffer;
 
+    /*
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
         for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
 
             const double flame_x_1 = field.getFlame().getPolygon().inners().at(i).at(k).x();
             const double flame_y_1 = field.getFlame().getPolygon().inners().at(i).at(k).y();
 
-            for(unsigned int l = 0; l < field.getFlame().getPolygon().inners().at(i).size(); l++){
+            for(unsigned int l = k + 1; l < field.getFlame().getPolygon().inners().at(i).size() - 1; l++){
 
                 const double flame_x_2 = field.getFlame().getPolygon().inners().at(i).at(l).x();
                 const double flame_y_2 = field.getFlame().getPolygon().inners().at(i).at(l).y();
@@ -395,6 +816,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
             }
         }
     }
+    /*
     
     //ay+bx+c=0のa,b,cを記録するLine構造体
     std::vector<Line> lines;
@@ -403,7 +825,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
         
     //linesにデータを入れる
     for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
-        for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size(); k++){
+        for(unsigned int k = 0; k < field.getFlame().getPolygon().inners().at(i).size() - 1; k++){
 
 
             const double x1 = field.getFlame().getPolygon().inners().at(i).at(k).x();
@@ -433,7 +855,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
     
     //PointLine構造体:近いポイントとラインの点番号を記録
     std::vector<PointLine> PointLineList;
-    std::vector<std::vector<bool>> hasNearPointLine;
+    std::vector<std::vector<bool>> hasNearPointLine(10);
 
     point_t point_buf;
     PointLine PointLine_Buf;
@@ -577,7 +999,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
                     goto PointSearch;
                 }
             }
-            */
+            *//*
 
             if(hasNearPoint.at(searching_field_inner_number).at(searching_field_point_number)){
                 //start is point
@@ -676,5 +1098,7 @@ Fit PolygonConnector::searchFieldConnection(procon::Field field,bool succeeded)
     succeeded = false;
 
     return emptyFit;
+
+    */
 
 }

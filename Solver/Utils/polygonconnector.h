@@ -12,6 +12,7 @@ class PolygonConnector
 {
 public:
 
+    static Fit searchFieldConnection(procon::Field field);
 
     static bool joinPolygon(procon::ExpandedPolygon Polygon1, procon::ExpandedPolygon Polygon2, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data);
 private:
@@ -22,7 +23,7 @@ private:
     static Ring popRingByPolygon(procon::ExpandedPolygon& polygon, int inner_position = -1);
     static void pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& polygon, int inner_position = -1);
     static bool hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2);
-    static Fit searchFieldConnection(procon::Field field, bool succeeded);
+
 };
 
 #endif // POLYGONCONNECTOR_H
