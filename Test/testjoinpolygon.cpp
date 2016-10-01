@@ -1,5 +1,5 @@
 #include "testjoinpolygon.h"
-
+#include "Utils/fit.h"
 #include "field.h"
 #include "polygonviewer.h"
 #include "Utils/polygonconnector.h"

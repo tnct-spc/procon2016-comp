@@ -12,7 +12,7 @@ class PolygonConnector
 {
 public:
 
-    static Fit searchFieldConnection(procon::Field field);
+    static std::tuple<bool,bool,int,int> searchFieldConnection(procon::Field field);
 
     static bool joinPolygon(procon::ExpandedPolygon Polygon1, procon::ExpandedPolygon Polygon2, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data);
 private:
