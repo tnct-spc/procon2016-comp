@@ -6,5 +6,6 @@
 
 TesterWraper::TesterWraper()
 {
-    lengthalgorithm::test();
+    lengthalgorithm la;
+    la.test();
 }

@@ -9,11 +9,7 @@
 
 class lengthalgorithm
 {
-private:
-    lengthalgorithm();
-
 public:
-
     // 当てはまるピースのIDをいれるクラス
     struct PieceEdge
     {
@@ -25,16 +21,34 @@ public:
             edge(_edge)
         {}
 
-    public:
         int piece;
         int edge;
     };
+private:
+    std::vector<PieceEdge> g_pieces_sorted;
+    std::vector<std::vector<PieceEdge>> g_sort_list;
+    // ピースの情報の入った配列
+    std::vector<procon::ExpandedPolygon> g_pieces;
+    // func()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
+    std::vector<lengthalgorithm::PieceEdge> g_comb;
+    // 組み合わせを保存する配列
+    std::vector<std::vector<lengthalgorithm::PieceEdge>> g_frame_stack;
+    //フレームの辺の長さとExpolygonの配列を入れると、ぴったりとはまる辺の組合せの配列が返ってくる
+    std::vector<std::vector<std::vector<PieceEdge>>> g_stacks;
 
-    static  void searchPairSide(double remaining_length, int watched_piece);
+public:
 
-    static std::vector<std::vector<PieceEdge>> fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces);
+    lengthalgorithm();
 
-    static void test();
+    void searchPairSide(double remaining_length, int watched_piece);
+
+    std::vector<std::vector<PieceEdge>> fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces);
+
+    void sortPieces(int watched_list);
+
+    std::vector<std::vector<std::vector<PieceEdge>>> piecesAlignmentSequence(std::vector<std::vector<std::vector<PieceEdge>>> stacks);
+
+    void test();
 
 };
 

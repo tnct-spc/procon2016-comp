@@ -282,7 +282,7 @@ void procon::ExpandedPolygon::updatePolygon(bool calc)
         calcSideAngle();
         calcSideSlope();
     } else {
-        std::cout << "updatePolygonは必要なくなったよ" << std::endl;
+        //std::cout << "updatePolygonは必要なくなったよ" << std::endl;
     }
 }
 

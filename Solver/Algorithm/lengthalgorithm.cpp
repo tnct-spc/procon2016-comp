@@ -8,29 +8,22 @@ lengthalgorithm::lengthalgorithm()
     test();
 }
 
-// ピースの情報の入った配列
-std::vector<procon::ExpandedPolygon> g_pieces;
-
-// func()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
-std::vector<lengthalgorithm::PieceEdge> g_comb;
-
-// 組み合わせを保存する配列
-std::vector<std::vector<lengthalgorithm::PieceEdge>> g_stack;
-
 // rl : フレーム辺の残りの長さ
 // pi : 破片番号。g_pieces[]のインデックス。
 void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 {
+
     // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
     if (fabs(remaining_length) < 0.001)
     {
+
         // 破片とその辺の組み合わせを保存
-        g_stack.push_back(g_comb);
+        g_frame_stack.push_back(g_comb);
         return;
     }
 
     // すべての破片の組み合わせを試してたら再帰から抜ける。
-    if (g_pieces.size() <= watched_piece)
+    if ((int)g_pieces.size() <= watched_piece)
     {
         return;
     }
@@ -43,16 +36,20 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
     piece = g_pieces[watched_piece];
     for (int e = 0; e < piece.getSize(); e++)
     {
+
         // フレーム辺の残りの長さより破片の辺が短ければ入れてみる。
         double l = piece.getSideLength()[e];
         if (l <= remaining_length)
         {
+
             // この破片と辺をスタックに積む
             // 実際のピースの情報を使う際にはpiはピースのIDに変える
             // pi_id = piece.getId();
             g_comb.push_back(PieceEdge(watched_piece, e));
+
             // 次の破片へ再帰
             searchPairSide(remaining_length - l, watched_piece + 1);
+
             // スタックから取り除く。
             g_comb.pop_back();
         }
@@ -65,15 +62,51 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 // 扱い易いようにグローバル関数をローカル関数に変換するための関数
 std::vector<std::vector<lengthalgorithm::PieceEdge>> lengthalgorithm::fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces)
 {
+
     // ピースの情報をグローバル化し、実行
     g_pieces = pieces;
     searchPairSide(frame,0);
 
     // 組合せの保存されたグローバル関数をローカル関数にし返す
-    std::vector<std::vector<PieceEdge>> box;
-    box = g_stack;
+    std::vector<std::vector<PieceEdge>> return_stack;
+    return_stack = g_frame_stack;
 
-    return box;
+    return return_stack;
+}
+
+void lengthalgorithm::sortPieces(int focus)
+{
+
+    // もし、最後まで調べ終わったら一つ手前へ
+    if ((int)(g_pieces_sorted.size()) <= focus)
+    {
+        this->g_sort_list.push_back(g_pieces_sorted);
+        return;
+    }
+
+    // 破片を並び替えながら再帰していく
+    for (int i = focus; i < (int)g_pieces_sorted.size(); i++)
+    {
+        std::swap(g_pieces_sorted[focus], g_pieces_sorted[i]);
+        sortPieces(focus + 1);
+        std::swap(g_pieces_sorted[focus], g_pieces_sorted[i]);
+    }
+}
+
+std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorithm::piecesAlignmentSequence(std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> stacks)
+{
+    std::vector<std::vector<std::vector<PieceEdge>>> sort_lists;
+    for (int f=0; f<(int)stacks.size(); f++)
+    {
+        for (int c=0; c<(int)stacks[f].size(); c++)
+        {
+            g_pieces_sorted = stacks[f][c];
+            sortPieces(0);
+        }
+        sort_lists.push_back(g_sort_list);
+        g_sort_list.clear();
+    }
+    return sort_lists;
 }
 
 void lengthalgorithm::test()
@@ -82,7 +115,6 @@ void lengthalgorithm::test()
     procon::ExpandedPolygon polygon1(0);
     procon::ExpandedPolygon polygon2(0);
     procon::ExpandedPolygon polygon3(0);
-    procon::ExpandedPolygon polygon4(0);
 
     polygon_t sample11;
     sample11.outer().push_back(point_t(0,0));
@@ -122,13 +154,16 @@ void lengthalgorithm::test()
     frames.push_back(5.0);
     frames.push_back(6.0);
 
-    //フレームの辺の長さとExpolygonの配列を入れると、ぴったりとはまる辺の組合せの配列が返ってくる
-    std::vector<std::vector<std::vector<PieceEdge>>> stacks;
 
-    for (int f=0; f<frames.size(); f++)
+
+    for (int f=0; f<(int)frames.size(); f++)
     {
-        stacks.push_back(fitSide(frames[f],pieces));
+        g_stacks.push_back(fitSide(frames[f],pieces));
+        g_frame_stack.clear();
     }
+
+    std::vector<std::vector<std::vector<PieceEdge>>> sort_list;
+    sort_list = piecesAlignmentSequence(g_stacks);
 
     printf("OK");
 }
