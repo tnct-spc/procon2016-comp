@@ -3,8 +3,6 @@
 
 #include "field.h"
 
-class AnswerBoard;
-
 namespace Ui {
 class AnswerBoard;
 }
@@ -19,12 +17,6 @@ public:
     void setField(const procon::Field& field);
     void setRawPicture(const cv::Mat& raw_pieces_pic,const std::vector<cv::Point>& pieces_pos);
     void setRandomColors(const std::vector<cv::Vec3b>& random_colors);
-
-signals:
-    void clicked();
-
-private slots:
-    void printBigWindow();
 
 private:
     Ui::AnswerBoard *ui;
@@ -44,9 +36,6 @@ private:
     const int right_margin  = 10;
     const double flame_size = 35;
 
-    procon::Field print_field;
-    AnswerBoard* ans_board;
-
     enum Space
     {
         LEFT    = 0,
@@ -61,7 +50,6 @@ private:
 protected:
     void paintEvent(QPaintEvent *);
     void keyPressEvent(QKeyEvent *event);
-    void mousePressEvent(QMouseEvent*);
 };
 
 #endif // ANSWERBOARD_H
