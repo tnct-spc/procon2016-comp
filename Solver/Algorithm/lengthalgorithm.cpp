@@ -74,10 +74,11 @@ std::vector<std::vector<lengthalgorithm::PieceEdge>> lengthalgorithm::fitSide(do
     return return_stack;
 }
 
+// ピースの組み合わせをすべてのパターンで並び替える。
+// focus : 並び替える組み合わせの配列での番号
 void lengthalgorithm::sortPieces(int focus)
 {
-
-    // もし、最後まで調べ終わったら一つ手前へ
+    // もし、最後まで調べ終わったら戻る
     if ((int)(g_pieces_sorted.size()) <= focus)
     {
         this->g_sort_list.push_back(g_pieces_sorted);
@@ -93,6 +94,8 @@ void lengthalgorithm::sortPieces(int focus)
     }
 }
 
+// 受け取った組み合わせをすべて並び替える。
+// stacks : 並び替える組み合わせの配列
 std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorithm::piecesAlignmentSequence(std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> stacks)
 {
     std::vector<std::vector<std::vector<PieceEdge>>> sort_lists;
@@ -104,6 +107,8 @@ std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorith
             sortPieces(0);
         }
         sort_lists.push_back(g_sort_list);
+        
+        // 毎フレームごとに中身をクリア
         g_sort_list.clear();
     }
     return sort_lists;
@@ -154,14 +159,16 @@ void lengthalgorithm::test()
     frames.push_back(5.0);
     frames.push_back(6.0);
 
-
-
+    // フレームの長さぴったりのピースと辺の組み合わせを探す。
     for (int f=0; f<(int)frames.size(); f++)
     {
         g_stacks.push_back(fitSide(frames[f],pieces));
+        
+        // 毎フレームごとにクリア
         g_frame_stack.clear();
     }
 
+    // 前に出てきた組み合わせを全パターンに並び替える。
     std::vector<std::vector<std::vector<PieceEdge>>> sort_list;
     sort_list = piecesAlignmentSequence(g_stacks);
 
