@@ -5,7 +5,12 @@
 
 lengthalgorithm::lengthalgorithm()
 {
-    test();
+}
+
+procon::Field lengthalgorithm::run(procon::Field field)
+{
+    //fake
+    return procon::Field();
 }
 
 // rl : フレーム辺の残りの長さ
@@ -107,7 +112,7 @@ std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorith
             sortPieces(0);
         }
         sort_lists.push_back(g_sort_list);
-        
+
         // 毎フレームごとに中身をクリア
         g_sort_list.clear();
     }
@@ -163,7 +168,7 @@ void lengthalgorithm::test()
     for (int f=0; f<(int)frames.size(); f++)
     {
         g_stacks.push_back(fitSide(frames[f],pieces));
-        
+
         // 毎フレームごとにクリア
         g_frame_stack.clear();
     }
@@ -172,5 +177,4 @@ void lengthalgorithm::test()
     std::vector<std::vector<std::vector<PieceEdge>>> sort_list;
     sort_list = piecesAlignmentSequence(g_stacks);
 
-    printf("OK");
 }

@@ -6,10 +6,13 @@
 #include "Utils/polygonconnector.h"
 #include "Utils/fit.h"
 #include "polygonviewer.h"
+#include "algorithmwrapper.h"
 
-class lengthalgorithm
+class lengthalgorithm : public AlgorithmWrapper
 {
 public:
+    procon::Field run(procon::Field field);
+
     // 当てはまるピースのIDをいれるクラス
     struct PieceEdge
     {
@@ -25,22 +28,22 @@ public:
         int edge;
     };
 private:
-    
+
     // sortPiecesで並び替える組み合わせを入れる配列。
     std::vector<PieceEdge> g_pieces_sorted;
-    
+
     // フレームごとの並び替えた組み合わせがすべて入る配列
     std::vector<std::vector<PieceEdge>> g_sort_list;
-    
+
     // ピースの情報の入った配列
     std::vector<procon::ExpandedPolygon> g_pieces;
-    
+
     // searchPairSide()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
     std::vector<lengthalgorithm::PieceEdge> g_comb;
-    
+
     // フレームごとの組み合わせ全てを保存する配列
     std::vector<std::vector<lengthalgorithm::PieceEdge>> g_frame_stack;
-    
+
     // 組み合わせが全て入る配列
     std::vector<std::vector<std::vector<PieceEdge>>> g_stacks;
 
