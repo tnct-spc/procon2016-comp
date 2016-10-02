@@ -6,10 +6,17 @@
 #include "Utils/polygonconnector.h"
 #include "Utils/fit.h"
 #include "polygonviewer.h"
+#include "algorithmwrapper.h"
 
-class lengthalgorithm
+class lengthalgorithm : public AlgorithmWrapper
 {
 public:
+    lengthalgorithm();
+
+    procon::Field run(procon::Field field);
+
+    void test();
+
     // 当てはまるピースのIDをいれるクラス
     struct PieceEdge
     {
@@ -32,13 +39,24 @@ private:
     
     // フレームごとの並び替えた組み合わせがすべて入る配列
     std::vector<std::vector<PieceEdge>> g_sort_list;
-    
+
+    //ピース辺の組み合わせ
+    typedef std::vector<PieceEdge> piece_edges_type;
+
+    //ピース辺の組み合わせの全パターン
+    typedef std::vector<piece_edges_type> frame_edge_set_type;
+
+    /*フレームの辺にぴったりはまるピース辺の組み合わせをを全パターン探す*/
+    frame_edge_set_type fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces);
+    void searchPairSide(double remaining_length, int watched_piece);
+
+    /*fitSide再帰関数で使用*/
     // ピースの情報の入った配列
     std::vector<procon::ExpandedPolygon> g_pieces;
-    
+
     // searchPairSide()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
-    std::vector<lengthalgorithm::PieceEdge> g_comb;
-    
+    piece_edges_type g_comb;
+
     // フレームごとの組み合わせ全てを保存する配列
     std::vector<std::vector<PieceEdge>> g_frame_stack;
     
@@ -49,19 +67,21 @@ private:
 
 public:
 
-    lengthalgorithm();
+    frame_edge_set_type g_frame_stack;
 
-    void searchPairSide(double remaining_length, int watched_piece);
-
-    std::vector<std::vector<PieceEdge>> fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces);
+    /*ピース辺の組み合わせを、すべての順番で作って返す*/
+    std::vector<frame_edge_set_type> piecesAlignmentSequence(std::vector<frame_edge_set_type> stacks);
 
     void sortPieces(int watched_list);
 
-    std::vector<std::vector<std::vector<PieceEdge>>> piecesAlignmentSequence(std::vector<std::vector<std::vector<PieceEdge>>> stacks);
+    /*pieceAlignmentSequenceの再帰関数で使用*/
+    // sortPiecesで並び替える組み合わせを入れる配列。
+    piece_edges_type g_pieces_sorted;
+
+    // フレームごとの並び替えた組み合わせがすべて入る配列
+    frame_edge_set_type g_sort_list;
 
     int clearOverlap(int frame,int com_num);
-
-    void test();
 
 };
 

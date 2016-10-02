@@ -9,7 +9,12 @@
 
 lengthalgorithm::lengthalgorithm()
 {
-    test();
+}
+
+procon::Field lengthalgorithm::run(procon::Field field)
+{
+    //fake
+    return field;
 }
 
 // rl : フレーム辺の残りの長さ
@@ -64,15 +69,16 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 }
 
 // 扱い易いようにグローバル関数をローカル関数に変換するための関数
-std::vector<std::vector<lengthalgorithm::PieceEdge>> lengthalgorithm::fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces)
+lengthalgorithm::frame_edge_set_type lengthalgorithm::fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces)
 {
 
     // ピースの情報をグローバル化し、実行
     g_pieces = pieces;
+    g_frame_stack.clear();
     searchPairSide(frame,0);
 
     // 組合せの保存されたグローバル関数をローカル関数にし返す
-    std::vector<std::vector<PieceEdge>> return_stack;
+    frame_edge_set_type return_stack;
     return_stack = g_frame_stack;
 
     return return_stack;
@@ -100,9 +106,9 @@ void lengthalgorithm::sortPieces(int focus)
 
 // 受け取った組み合わせをすべて並び替える。
 // stacks : 並び替える組み合わせの配列
-std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorithm::piecesAlignmentSequence(std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> stacks)
+std::vector<lengthalgorithm::frame_edge_set_type> lengthalgorithm::piecesAlignmentSequence(std::vector<lengthalgorithm::frame_edge_set_type> stacks)
 {
-    std::vector<std::vector<std::vector<PieceEdge>>> sort_lists;
+    std::vector<frame_edge_set_type> sort_lists;
     for (int f=0; f<(int)stacks.size(); f++)
     {
         for (int c=0; c<(int)stacks[f].size(); c++)
@@ -111,7 +117,7 @@ std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorith
             sortPieces(0);
         }
         sort_lists.push_back(g_sort_list);
-        
+
         // 毎フレームごとに中身をクリア
         g_sort_list.clear();
     }
@@ -201,18 +207,18 @@ void lengthalgorithm::test()
     frames.push_back(6.0);
     frames.push_back(4.0);
 
+    // 組み合わせが全て入る配列
+    std::vector<frame_edge_set_type> stacks;
+
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
     for (int f=0; f<(int)frames.size(); f++)
     {
-        g_stacks.push_back(fitSide(frames[f],pieces));
-        
-        // 毎フレームごとにクリア
-        g_frame_stack.clear();
+        stacks.push_back(fitSide(frames[f],pieces));
     }
 
     // 前に出てきた組み合わせを全パターンに並び替える。
-    std::vector<std::vector<std::vector<PieceEdge>>> sort_list;
-    sort_list = piecesAlignmentSequence(g_stacks);
+    std::vector<frame_edge_set_type> sort_list;
+    sort_list = piecesAlignmentSequence(stacks);
 
     g_cleared_sort = sort_list;
 
