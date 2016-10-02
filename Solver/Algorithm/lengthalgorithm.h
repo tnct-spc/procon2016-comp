@@ -24,10 +24,11 @@ public:
         int piece;
         int edge;
     };
+
 private:
-    
+
     // sortPiecesで並び替える組み合わせを入れる配列。
-    std::vector<PieceEdge> g_pieces_sorted;
+    std::vector<PieceEdge> g_sorted_pieces;
     
     // フレームごとの並び替えた組み合わせがすべて入る配列
     std::vector<std::vector<PieceEdge>> g_sort_list;
@@ -39,10 +40,12 @@ private:
     std::vector<lengthalgorithm::PieceEdge> g_comb;
     
     // フレームごとの組み合わせ全てを保存する配列
-    std::vector<std::vector<lengthalgorithm::PieceEdge>> g_frame_stack;
+    std::vector<std::vector<PieceEdge>> g_frame_stack;
     
     // 組み合わせが全て入る配列
     std::vector<std::vector<std::vector<PieceEdge>>> g_stacks;
+
+    std::vector<std::vector<std::vector<PieceEdge>>> g_cleared_sort;
 
 public:
 
@@ -55,6 +58,8 @@ public:
     void sortPieces(int watched_list);
 
     std::vector<std::vector<std::vector<PieceEdge>>> piecesAlignmentSequence(std::vector<std::vector<std::vector<PieceEdge>>> stacks);
+
+    int clearOverlap(int frame,int com_num);
 
     void test();
 

@@ -3,6 +3,10 @@
 #include "utilities.h"
 #include "field.h"
 
+// PIを使うため
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 lengthalgorithm::lengthalgorithm()
 {
     test();
@@ -79,18 +83,18 @@ std::vector<std::vector<lengthalgorithm::PieceEdge>> lengthalgorithm::fitSide(do
 void lengthalgorithm::sortPieces(int focus)
 {
     // もし、最後まで調べ終わったら戻る
-    if ((int)(g_pieces_sorted.size()) <= focus)
+    if ((int)(g_sorted_pieces.size()) <= focus)
     {
-        this->g_sort_list.push_back(g_pieces_sorted);
+        this->g_sort_list.push_back(g_sorted_pieces);
         return;
     }
 
     // 破片を並び替えながら再帰していく
-    for (int i = focus; i < (int)g_pieces_sorted.size(); i++)
+    for (int i = focus; i < (int)g_sorted_pieces.size(); i++)
     {
-        std::swap(g_pieces_sorted[focus], g_pieces_sorted[i]);
+        std::swap(g_sorted_pieces[focus], g_sorted_pieces[i]);
         sortPieces(focus + 1);
-        std::swap(g_pieces_sorted[focus], g_pieces_sorted[i]);
+        std::swap(g_sorted_pieces[focus], g_sorted_pieces[i]);
     }
 }
 
@@ -103,7 +107,7 @@ std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorith
     {
         for (int c=0; c<(int)stacks[f].size(); c++)
         {
-            g_pieces_sorted = stacks[f][c];
+            g_sorted_pieces = stacks[f][c];
             sortPieces(0);
         }
         sort_lists.push_back(g_sort_list);
@@ -114,50 +118,88 @@ std::vector<std::vector<std::vector<lengthalgorithm::PieceEdge>>> lengthalgorith
     return sort_lists;
 }
 
+// 隣同士の破片が重なる場合リストから削除
+// com_num : 調べる並び順の番号
+int lengthalgorithm::clearOverlap(int frame,int com_num)
+{
+    // その並び順が削除されたかを確認
+    int check=0;
+
+    // ピースが隣り合っているところを調べる
+    for (int p = 0; p < (int)g_cleared_sort[frame][com_num].size() - 1; p++)
+    {
+        // 隣り合った左右の破片の隣り合う角を調べ180度を越さないか確かめる
+        procon::ExpandedPolygon Polygon1 = g_pieces[g_cleared_sort[frame][com_num][p].piece];
+        procon::ExpandedPolygon Polygon2 = g_pieces[g_cleared_sort[frame][com_num][p + 1].piece];
+        Polygon1.updatePolygon();
+        Polygon2.updatePolygon();
+        double deg1 = Polygon1.getSideAngle()[g_cleared_sort[frame][com_num][p].edge] * 180 / M_PI;
+        double deg2 = Polygon2.getSideAngle()[(g_cleared_sort[frame][com_num][p + 1].edge + 1) % Polygon2.getSize()] * 180 / M_PI;
+
+        // 破片同士が重なっていたら削除
+        if ((180 - deg1 - deg2) < -1.0)
+        {
+            g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
+            check = 1;
+            return check;
+        }
+    }
+    return check;
+}
+
 void lengthalgorithm::test()
 {
     // テストデータをセットアップ
     procon::ExpandedPolygon polygon1(0);
     procon::ExpandedPolygon polygon2(0);
     procon::ExpandedPolygon polygon3(0);
+    procon::ExpandedPolygon polygon4(0);
 
     polygon_t sample11;
     sample11.outer().push_back(point_t(0,0));
-    sample11.outer().push_back(point_t(0,3));
-    sample11.outer().push_back(point_t(2,2));
+    sample11.outer().push_back(point_t(0,4));
     sample11.outer().push_back(point_t(2,0));
     sample11.outer().push_back(point_t(0,0));
 
     polygon_t sample12;
+    sample12.outer().push_back(point_t(2,0));
+    sample12.outer().push_back(point_t(1,2));
     sample12.outer().push_back(point_t(3,2));
-    sample12.outer().push_back(point_t(2,2));
-    sample12.outer().push_back(point_t(0,3));
-    sample12.outer().push_back(point_t(0,4));
-    sample12.outer().push_back(point_t(3,4));
-    sample12.outer().push_back(point_t(3,2));
+    sample12.outer().push_back(point_t(3,0));
+    sample12.outer().push_back(point_t(2,0));
 
     polygon_t sample13;
-    sample13.outer().push_back(point_t(6,0));
-    sample13.outer().push_back(point_t(2,0));
-    sample13.outer().push_back(point_t(2,2));
+    sample13.outer().push_back(point_t(1,2));
+    sample13.outer().push_back(point_t(0,4));
+    sample13.outer().push_back(point_t(4,4));
+    sample13.outer().push_back(point_t(5,0));
+    sample13.outer().push_back(point_t(3,0));
     sample13.outer().push_back(point_t(3,2));
-    sample13.outer().push_back(point_t(3,4));
-    sample13.outer().push_back(point_t(6,0));
+    sample13.outer().push_back(point_t(1,2));
+
+    polygon_t sample14;
+    sample14.outer().push_back(point_t(5,0));
+    sample14.outer().push_back(point_t(4,4));
+    sample14.outer().push_back(point_t(6,4));
+    sample14.outer().push_back(point_t(6,0));
+    sample14.outer().push_back(point_t(5,0));
 
     polygon1.setPolygon(sample11);
     polygon2.setPolygon(sample12);
     polygon3.setPolygon(sample13);
+    polygon4.setPolygon(sample14);
 
     std::vector<procon::ExpandedPolygon> pieces;
     pieces.push_back(polygon1);
     pieces.push_back(polygon2);
     pieces.push_back(polygon3);
+    pieces.push_back(polygon4);
 
     std::vector<double> frames;
-    frames.push_back(4.0);
-    frames.push_back(3.0);
-    frames.push_back(5.0);
     frames.push_back(6.0);
+    frames.push_back(4.0);
+    frames.push_back(6.0);
+    frames.push_back(4.0);
 
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
     for (int f=0; f<(int)frames.size(); f++)
@@ -171,6 +213,25 @@ void lengthalgorithm::test()
     // 前に出てきた組み合わせを全パターンに並び替える。
     std::vector<std::vector<std::vector<PieceEdge>>> sort_list;
     sort_list = piecesAlignmentSequence(g_stacks);
+
+    g_cleared_sort = sort_list;
+
+    // 並び順が削除されたら同じ番号でfuncを繰り返す
+    int count = 0;
+    //int comb_size = (int)g_comb.size();
+
+    // すべての組み合わせについて調べる
+    for (int f=0; f<(int)g_cleared_sort.size(); f++)
+    {
+        for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
+        {
+            int check = clearOverlap(f,count);
+
+            // もし削除されていなかったら次の番号で実行
+            if (check == 0) count++;
+        }
+        count = 0;
+    }
 
     printf("OK");
 }
