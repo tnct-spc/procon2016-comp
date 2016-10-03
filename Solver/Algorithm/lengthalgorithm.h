@@ -4,7 +4,7 @@
 #include "field.h"
 #include "utilities.h"
 #include "Utils/polygonconnector.h"
-#include "Utils/fit.h"
+#include "fit.h"
 #include "polygonviewer.h"
 #include "algorithmwrapper.h"
 
@@ -13,7 +13,7 @@ class lengthalgorithm : public AlgorithmWrapper
 public:
     lengthalgorithm();
 
-    procon::Field run(procon::Field field);
+    void run(procon::Field field);
 
     void test();
 

@@ -11,10 +11,10 @@ lengthalgorithm::lengthalgorithm()
 {
 }
 
-procon::Field lengthalgorithm::run(procon::Field field)
+void lengthalgorithm::run(procon::Field field)
 {
     //fake
-    return field;
+    //return field;
 }
 
 // rl : フレーム辺の残りの長さ
@@ -23,7 +23,7 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 {
 
     // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
-    if (fabs(remaining_length) < 0.001)
+    if (fabs(remaining_length) < 1.0)
     {
 
         // 破片とその辺の組み合わせを保存
@@ -193,38 +193,38 @@ void lengthalgorithm::test()
     procon::ExpandedPolygon polygon4(0);
 
     polygon_t sample11;
-    sample11.outer().push_back(point_t(0,0));
-    sample11.outer().push_back(point_t(0,4));
-    sample11.outer().push_back(point_t(2,0));
-    sample11.outer().push_back(point_t(0,0));
+    sample11.outer().push_back(point_t(0.00000000032,0.00000000021));
+    sample11.outer().push_back(point_t(0.00000000043,4.00000000093));
+    sample11.outer().push_back(point_t(2.00000000056,0.00000000079));
+    sample11.outer().push_back(point_t(0.00000000043,0.00000000069));
 
     polygon_t sample12;
-    sample12.outer().push_back(point_t(2,0));
-    sample12.outer().push_back(point_t(1,2));
-    sample12.outer().push_back(point_t(3,2));
-    sample12.outer().push_back(point_t(3,0));
-    sample12.outer().push_back(point_t(2,0));
+    sample12.outer().push_back(point_t(2.00000000033,0.00000000013));
+    sample12.outer().push_back(point_t(1.00000000011,2.00000000069));
+    sample12.outer().push_back(point_t(3.00000000034,2.00000000056));
+    sample12.outer().push_back(point_t(3.00000000079,0.00000000032));
+    sample12.outer().push_back(point_t(2.00000000032,0.00000000079));
 
     polygon_t sample13;
-    sample13.outer().push_back(point_t(1,2));
-    sample13.outer().push_back(point_t(0,4));
-    sample13.outer().push_back(point_t(4,4));
-    sample13.outer().push_back(point_t(5,0));
-    sample13.outer().push_back(point_t(3,0));
-    sample13.outer().push_back(point_t(3,2));
+    sample13.outer().push_back(point_t(1.00000000036,2.00000000037));
+    sample13.outer().push_back(point_t(0.00000000032,4.00000000069));
+    sample13.outer().push_back(point_t(4.00000000048,4.00000000085));
+    sample13.outer().push_back(point_t(5.00000000037,0.00000000026));
+    sample13.outer().push_back(point_t(3.00000000049,0.00000000068));
+    sample13.outer().push_back(point_t(3.00000000032,2.00000000057));
     sample13.outer().push_back(point_t(1,2));
 
     polygon_t sample14;
-    sample14.outer().push_back(point_t(5,0));
-    sample14.outer().push_back(point_t(4,4));
-    sample14.outer().push_back(point_t(6,4));
-    sample14.outer().push_back(point_t(6,0));
-    sample14.outer().push_back(point_t(5,0));
+    sample14.outer().push_back(point_t(5.00000000085,0.00000000083));
+    sample14.outer().push_back(point_t(4.00000000032,4.00000000069));
+    sample14.outer().push_back(point_t(6.00000000064,4.00000000041));
+    sample14.outer().push_back(point_t(6.00000000096,0.00000000056));
+    sample14.outer().push_back(point_t(5.00000000032,0.00000000035));
 
-    polygon1.setPolygon(sample11);
-    polygon2.setPolygon(sample12);
-    polygon3.setPolygon(sample13);
-    polygon4.setPolygon(sample14);
+    polygon1.resetPolygonForce(sample11);
+    polygon2.resetPolygonForce(sample12);
+    polygon3.resetPolygonForce(sample13);
+    polygon4.resetPolygonForce(sample14);
 
     std::vector<procon::ExpandedPolygon> pieces;
     pieces.push_back(polygon1);
@@ -234,21 +234,22 @@ void lengthalgorithm::test()
 
     polygon_t sample_frame;
     sample_frame.inners().push_back(polygon_t::ring_type());
-    sample_frame.inners().back().push_back(point_t(0,0));
-    sample_frame.inners().back().push_back(point_t(6,0));
-    sample_frame.inners().back().push_back(point_t(6,4));
-    sample_frame.inners().back().push_back(point_t(0,4));
-    sample_frame.inners().back().push_back(point_t(0,0));
+    sample_frame.inners().back().push_back(point_t(0.00000000032,0.00000000047));
+    sample_frame.inners().back().push_back(point_t(6.00000000095,0.00000000076));
+    sample_frame.inners().back().push_back(point_t(6.00000000052,4.00000000051));
+    sample_frame.inners().back().push_back(point_t(0.00000000032,4.00000000096));
+    sample_frame.inners().back().push_back(point_t(0.00000000064,0.00000000032));
 
-    g_frame.setPolygon(sample_frame);
+    g_frame.resetPolygonForce(sample_frame);
 
     // 組み合わせが全て入る配列
     std::vector<frame_edge_set_type> stacks;
 
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
-    for (int f=0; f<(int)g_frame.getSize(); f++)
+    for (int f=0; f<(int)g_frame.getInnersSideAngle().at(0).size(); f++)
     {
-        stacks.push_back(fitSide(g_frame.getSideLength()[f],pieces));
+        double frame_length = g_frame.getInnersSideLength().back()[f];
+        stacks.push_back(fitSide(frame_length,pieces));
     }
 
     // 前に出てきた組み合わせを全パターンに並び替える。

@@ -11,6 +11,11 @@ CONFIG += c++14
 TARGET = Solver
 TEMPLATE = lib
 
+CONFIG   += precompile_header
+
+# Use Precompiled headers (PCH)
+PRECOMPILED_HEADER  = $$PWD/../Utilities/precompile.h
+
 DEFINES += SOLVER_LIBRARY
 
 SOURCES += solver.cpp \
@@ -19,8 +24,12 @@ SOURCES += solver.cpp \
     Algorithm/pooralgorithm.cpp \
     Algorithm/hillclibming.cpp \
     Utils/polygonconnector.cpp \
-    Utils/fit.cpp \
-    Algorithm/lengthalgorithm.cpp
+    Algorithm/lengthalgorithm.cpp\
+    Utils/evaluation.cpp \
+    Algorithm/beamsearch.cpp \
+    Evaluation/searchsamelength.cpp \
+    Algorithm/beamsearchbylength.cpp \
+    Algorithm/stepsearch.cpp
 
 HEADERS += solver.h\
         solver_global.h \
@@ -29,8 +38,12 @@ HEADERS += solver.h\
     Algorithm/pooralgorithm.h \
     Algorithm/hillclibming.h \
     Utils/polygonconnector.h \
-    Utils/fit.h \
-    Algorithm/lengthalgorithm.h
+    Algorithm/lengthalgorithm.h\
+    Utils/evaluation.h \
+    Algorithm/beamsearch.h \
+    Evaluation/searchsamelength.h \
+    Algorithm/beamsearchbylength.h \
+    Algorithm/stepsearch.h
 
 unix {
     target.path = /usr/lib
@@ -50,3 +63,10 @@ else:unix: LIBS += -L$$OUT_PWD/../Utilities/ -lUtilities
 
 INCLUDEPATH += $$PWD/../Utilities
 DEPENDPATH += $$PWD/../Utilities
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../DisplayAnswer/release/ -lDisplayAnswer
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../DisplayAnswer/debug/ -lDisplayAnswer
+else:unix: LIBS += -L$$OUT_PWD/../DisplayAnswer/ -lDisplayAnswer
+
+INCLUDEPATH += $$PWD/../DisplayAnswer
+DEPENDPATH += $$PWD/../DisplayAnswer

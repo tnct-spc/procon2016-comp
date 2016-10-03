@@ -1,5 +1,10 @@
 #include "polygonconnector.h"
 
+#include "utilities.h"
+#include "polygonviewer.h"
+
+//#define DEBUG_RING
+
 PolygonConnector::PolygonConnector()
 {
 
@@ -16,7 +21,7 @@ Ring PolygonConnector::popRingByPolygon(procon::ExpandedPolygon& polygon, int in
         Ring inner = polygon.getPolygon().inners().at(inner_position);
         Ring outer;
         int inner_size = inner.size();
-        for(int i=inner_size-1; i > 0; --i){ //not copy i==0
+        for(int i=0; i < inner_size-1; ++i){ //not copy last
             outer.push_back(inner[i]);
         }
         return outer;
@@ -24,7 +29,7 @@ Ring PolygonConnector::popRingByPolygon(procon::ExpandedPolygon& polygon, int in
 }
 
 //ピースならouterを、フレームなら指定のinner(反転させる)とringを置き換える（最後の点を追加する）
-void PolygonConnector::pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& polygon, int inner_position)
+polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolygon const& polygon, int inner_position)
 {
     ring.push_back(*ring.begin());
 
@@ -38,7 +43,7 @@ void PolygonConnector::pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& po
     }else{
         Ring inner;
         int ring_size = ring.size();
-        for(int i=ring_size-1; i >= 0; --i){
+        for(int i=0; i < ring_size; ++i){
             inner.push_back(ring[i]);
         }
         new_raw_polygon.inners().at(inner_position).clear();
@@ -47,34 +52,38 @@ void PolygonConnector::pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& po
         }
     }
 
-    polygon.setPolygon(new_raw_polygon);
+    return new_raw_polygon;
 }
 
-//ポリゴンを合体する関数本体
-bool PolygonConnector::joinPolygon(procon::ExpandedPolygon Polygon1, procon::ExpandedPolygon Polygon2, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data)
+//ポリゴンを合体する関数本体 !!!!!!polygon2 mast piece
+bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data)
 {
-    //結合情報
-    Fit fit1 = join_data[0];
-    Fit fit2 = join_data[1];
-
-    //それぞれOuterとして持つ
-    Ring ring1 = popRingByPolygon(Polygon1, Polygon1.getInnerSize() == 0 ? -1 : fit1.flame_inner_pos);
-    Ring ring2 = popRingByPolygon(Polygon2, Polygon2.getInnerSize() == 0 ? -1 : fit2.flame_inner_pos);
-    int size1 = ring1.size();
-    int size2 = ring2.size();
-
+#ifdef DEBUG_RING
     auto debugRing = [](Ring ring, int line){
         std::cout<<std::to_string(line)<<" : ";
-        for (int i=0; i<ring.size(); i++) {
+        for (int i=0; i < static_cast<int>(ring.size()); i++) {
             double x = ring[i].x();
             double y = ring[i].y();
             std::cout<<"<"<<x<<","<<y<<">";
         }
         std::cout<<std::endl;
     };
+#endif
 
+    //結合情報
+    Fit fit1 = join_data[0];
+    Fit fit2 = join_data[1];
+
+    //それぞれOuterとして持つ
+    Ring ring1 = popRingByPolygon(jointed_polygon, jointed_polygon.getInnerSize() == 0 ? -1 : fit1.frame_inner_pos);
+    Ring ring2 = popRingByPolygon(piece, -1);
+    int size1 = ring1.size();
+    int size2 = ring2.size();
+
+#ifdef DEBUG_RING
     debugRing(ring1,__LINE__);
     debugRing(ring2,__LINE__);
+#endif
 
     //結合後に座標が一致する始点及び終点を取得
     const int complete_matching_start_pos_1 = fit1.start_dot_or_line == Fit::Dot ? fit1.start_id : fit1.start_id                  ;
@@ -90,41 +99,29 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon Polygon1, procon::Exp
     const double degree2 = atan2(y2, x2);
     const double degree1 = atan2(y1, x1);
     const double rotate_radian = (degree1 - degree2);
-    Ring turned_ring;
-    for (auto point : ring2)
-    {
-        const double x = point.x() - ring2[0].x();
-        const double y = point.y() - ring2[0].y();
-        const double move_x = (x * cos(rotate_radian)) - (y * sin(rotate_radian));
-        const double move_y = (x * sin(rotate_radian)) + (y * cos(rotate_radian));
-        const double turn_x = move_x + ring2[0].x();
-        const double turn_y = move_y + ring2[0].y();
-        turned_ring.push_back(point_t(turn_x, turn_y));
-    }
-    ring2 = turned_ring;
+    piece.rotatePolygon(-rotate_radian*(360/(M_PI*2))); //rotate piece
+    ring2 = popRingByPolygon(piece,-1); //update ring2
 
-
-    debugRing(ring1,__LINE__);
-    debugRing(ring2,__LINE__);
+    //debugRing(ring1,__LINE__);
+    //debugRing(ring2,__LINE__);
 
     // 移動　結合後に一致する点とその次の点を用いて、ポリゴンのx,y移動を調べ、Polygon2を平行移動
-    const int Join_point1 = (complete_matching_start_pos_1 + 1) % size1;
-    const int Join_point2 = ((complete_matching_start_pos_2 - 1) % size2 + size2) % size2;
+    const int Join_point1 = complete_matching_start_pos_1;
+    const int Join_point2 = complete_matching_start_pos_2;
     const double move_x = ring1[Join_point1].x() - ring2[Join_point2].x();
     const double move_y = ring1[Join_point1].y() - ring2[Join_point2].y();
-    Ring translated_ring;
-    for (auto point : ring2)
-    {
-        translated_ring.push_back(point_t(point.x() + move_x, point.y() + move_y));
-    }
-    ring2 = translated_ring;
+    piece.translatePolygon(move_x, move_y); //translate piece
+    ring2 = popRingByPolygon(piece,-1); //update ring2
 
     // 重複チェック！
-    bool conf=false;
-    //TODO:未完成 if(hasConflict(ring1, ring2, fit1, fit2)) conf=true;
+    if(hasConflict(ring1, ring2, fit1, fit2)){
+        return false;
+    }
 
+#ifdef DEBUG_RING
     debugRing(ring1,__LINE__);
     debugRing(ring2,__LINE__);
+#endif
 
     // 結合　新しいRingに結合後の外周の角を入れる。
     // もし、結合端の辺の長さが等しくならない時はRing1,Ring2ともに端の角を入力。
@@ -134,7 +131,6 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon Polygon1, procon::Exp
     int Type = 1;
 
     double x,y;
-    //TODO:ここバグでループしてそう。。。sorry
     do{
         if (Type == 1) {
             x = ring1[count%size1].x();
@@ -146,6 +142,10 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon Polygon1, procon::Exp
                 } else {
                     count = complete_matching_start_pos_2;
                 }
+                if(fit1.start_dot_or_line == Fit::Line && fit1.is_start_straight == true){
+                    // Line is straight. Skip.
+                    count++;
+                }
             }else{
                 count++;
             }
@@ -154,7 +154,12 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon Polygon1, procon::Exp
             x = ring2[count%size2].x();
             y = ring2[count%size2].y();
             if (count % size2 == (fit2.end_dot_or_line == Fit::Dot ? (((complete_matching_end_pos_2 - 1) % size2 + size2) % size2) : complete_matching_end_pos_2)) {
-                Type = -1;
+                if(fit1.end_dot_or_line == Fit::Line && fit1.is_end_straight == true){
+                    // Line is straight. Skip.
+                    break;
+                }else{
+                    Type=-1;
+                }
             }else{
                 count++;
             }
@@ -162,65 +167,160 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon Polygon1, procon::Exp
         new_ring.push_back(point_t(x,y));
     } while (Type != -1);
 
+#ifdef DEBUG_RING
     debugRing(new_ring,__LINE__);
+#endif
 
     //　ポリゴンにRingを出力しておしまい
-    if(Polygon1.getInnerSize() != 0){
-        pushRingToPolygon(new_ring, Polygon1, fit1.flame_inner_pos);
-        Polygon1.setMultiIds(std::vector<int>{Polygon1.getId(), Polygon2.getId()});
-
-        new_polygon = std::move(Polygon1);
-
-    }else if(Polygon2.getInnerSize() != 0){
-        pushRingToPolygon(new_ring, Polygon2, fit2.flame_inner_pos);
-        Polygon2.setMultiIds(std::vector<int>{Polygon2.getId(), Polygon1.getId()});
-
-        new_polygon = std::move(Polygon2);
-
-    }else{
-        new_polygon.setMultiIds(std::vector<int>{Polygon1.getId(), Polygon2.getId()});
-        pushRingToPolygon(new_ring, new_polygon);
+    //TODO
+    if(jointed_polygon.getInnerSize() != 0){ //frame-piece
+        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, jointed_polygon, fit1.frame_inner_pos);
+        jointed_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
+        new_polygon = std::move(jointed_polygon);
+        new_polygon.pushNewJointedPolygon(new_raw_polygon, piece);
+    }else{ //piece-piece
+        throw "Not supported!";
+        new_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
+        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, new_polygon);
+        //new_polygon.pushNewJointedPolygon(jointed_polygon, join_data);
+        //new_polygon.pushNewJointedPolygon(piece, join_data);
     }
-    if(conf) return false;
+
     return true;
 }
 
-//重複を見つける。実装途中なのでとても汚い
+//重複を見つける。
 bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
 {
     int size1 = ring1.size();
     int size2 = ring2.size();
-    //safe line
-    int safe_start_pos_1 = fit1.start_dot_or_line == Fit::Dot ? decrement(fit1.start_id, size1) : fit1.start_id                  ;
-    int safe_end_pos_1   = fit1.end_dot_or_line   == Fit::Dot ? increment(fit1.end_id, size1)   : increment(fit1.end_id, size1)  ;
-    int safe_start_pos_2 = fit2.start_dot_or_line == Fit::Dot ? increment(fit2.start_id, size2) : increment(fit2.start_id, size2);
-    int safe_end_pos_2   = fit2.end_dot_or_line   == Fit::Dot ? decrement(fit2.end_id, size2)   : fit2.end_id                    ;
-    //↓ここおかしいのでいろいろ変える
-    safe_end_pos_1 = increment(safe_end_pos_1, size1);
-    safe_end_pos_2 = decrement(safe_end_pos_2, size2);
+    //結合後に座標が一致する始点及び終点を取得
+    const int cmstart1 = fit1.start_dot_or_line == Fit::Dot ? fit1.start_id : fit1.start_id                  ;
+    const int cmend1   = fit1.end_dot_or_line   == Fit::Dot ? fit1.end_id   : increment(fit1.end_id, size1)  ;
+    const int cmstart2 = fit2.start_dot_or_line == Fit::Dot ? fit2.start_id : increment(fit2.start_id, size2);
+    const int cmend2   = fit2.end_dot_or_line   == Fit::Dot ? fit2.end_id   : fit2.end_id                    ;
 
-    bool ring1_safe_zone = true;
-    bool ring1_yellow_zone = false;
+    bool ring1_yello_start_zone = false;
+    bool ring1_orange_start_zone = false;
+    bool ring1_red_zone = false;
+    bool ring1_orange_end_zone = true;
+    bool ring1_yellow_end_zone = false;
+    bool ring1_white_zone = false;
+
+    int ring1_pos = cmend1; //orange end zone
+    if((ring1_pos+2)%size1 == cmstart1 && fit1.start_dot_or_line == Fit::Dot){
+        ring1_orange_end_zone = false;
+        ring1_yello_start_zone = true;
+    }else if((ring1_pos+1)%size1 == cmstart1 && fit1.start_dot_or_line == Fit::Line){
+        ring1_orange_end_zone = false;
+        ring1_orange_start_zone = true;
+    }
+
     for(int i=0;i<size1;++i){
-        if(ring1_yellow_zone){
-            ring1_yellow_zone = false;
+
+        //make ring
+        point_t line1_start = ring1[ring1_pos];
+        point_t line1_end = ring1[(ring1_pos+1)%size1];
+
+
+        bool ring2_yello_start_zone = false;
+        bool ring2_orange_start_zone = false;
+        bool ring2_red_zone = false;
+        bool ring2_orange_end_zone = true;
+        bool ring2_yellow_end_zone = false;
+        bool ring2_white_zone = false;
+
+        int ring2_pos = cmend2; //orange end zone
+        if(((ring2_pos-2)%size2+size2)%size2 == cmstart2 && fit2.start_dot_or_line == Fit::Dot){
+            ring2_orange_end_zone = false;
+            ring2_yello_start_zone = true;
+        }else if(((ring2_pos-1)%size2+size2)%size2 == cmstart2 && fit2.start_dot_or_line == Fit::Line){
+            ring2_orange_end_zone = false;
+            ring2_orange_start_zone = true;
         }
-        if((safe_start_pos_1+i) >= size1-1){
-            ring1_yellow_zone = true;
-        }
-        if(i!=0 && (safe_start_pos_1+i)%size1 == safe_end_pos_1){
-            ring1_safe_zone = false;
-        }
-        bg::model::segment<point_t> line1(ring1[(safe_start_pos_1+i)%size1],ring1[(safe_start_pos_1+i+1)%size1]);
+
         for(int j=0;j<size2;++j){
-            //jump ring2's safe zone
-            if(j==0 && ring1_safe_zone) j = safe_start_pos_2 - ( (safe_start_pos_2 >= safe_end_pos_2) ? safe_end_pos_2 : (safe_end_pos_2-size2) );
-            if((safe_end_pos_2+j) >= size2-1 && ring1_safe_zone) break;
-            if(j==0 && ring1_yellow_zone) j =                  safe_start_pos_2 - ( (safe_start_pos_2 >= safe_end_pos_2) ? safe_end_pos_2 : (safe_end_pos_2-size2) );
-            bg::model::segment<point_t> line2(ring2[(safe_end_pos_2+j)%size2],ring2[(safe_end_pos_2+j+1)%size2]);
-            if(static_cast<bool>(bg::intersects(line1, line2))){
-                return true;
+
+            //skip check
+            if(     ring1_white_zone ||
+                    (ring1_yellow_end_zone && !ring2_orange_end_zone && (ring2_yellow_end_zone || ring2_white_zone || ring2_red_zone || ring2_orange_start_zone || ring2_yello_start_zone)) ||
+                    (ring1_orange_end_zone && !ring2_red_zone && !ring2_yellow_end_zone && !ring2_orange_end_zone && (ring2_white_zone || (ring2_orange_start_zone && (cmstart1!=cmend1 || fit2.start_dot_or_line == Fit::Line)) || ring2_yello_start_zone)) ||
+                    (ring1_red_zone && !ring2_red_zone && !ring2_orange_end_zone && !ring2_orange_start_zone && (ring2_white_zone || ring2_yellow_end_zone || ring2_yellow_end_zone)) ||
+                    (ring1_orange_start_zone && !ring2_red_zone && !ring2_orange_start_zone && !ring2_yello_start_zone && (ring2_white_zone || ring2_yellow_end_zone || (ring2_orange_end_zone && (cmstart1 != cmend1 || fit2.start_dot_or_line == Fit::Line)))) ||
+                    (ring1_yello_start_zone && !ring2_orange_start_zone && (ring2_yello_start_zone || ring2_white_zone || ring2_yellow_end_zone || ring2_orange_end_zone || ring2_red_zone))
+              ){
+                //make ring
+                point_t line2_start = ring2[ring2_pos];
+                point_t line2_end = ring2[((ring2_pos - 1)%size2+size2)%size2];
+
+                //check conflict
+                if(static_cast<bool>(Utilities::cross_check(line1_start, line1_end, line2_start, line2_end))){
+                    return true;
+                }
             }
+
+            //dec
+            ring2_pos--;
+            if(ring2_pos == -1) ring2_pos = size2 - 1;
+
+            //toggle
+            if(ring2_orange_end_zone){
+                ring2_orange_end_zone = false;
+                if(fit2.end_dot_or_line == Fit::Dot){
+                    ring2_yellow_end_zone = true;
+                }else{
+                    ring2_white_zone = true;
+                }
+            }else if(ring2_yellow_end_zone && (fit2.start_dot_or_line == Fit::Dot ? ring2_yello_start_zone == false : ring2_orange_start_zone == false)){
+                ring2_yellow_end_zone = false;
+                ring2_white_zone = true;
+            }
+            if(((ring2_pos-2)%size2+size2)%size2 == cmstart2 && fit2.start_dot_or_line == Fit::Dot){
+                ring2_white_zone = false;
+                ring2_yello_start_zone = true;
+            }else if(((ring2_pos-1)%size2+size2)%size2 == cmstart2 && fit2.start_dot_or_line == Fit::Line){
+                ring2_white_zone = false;
+                ring2_orange_start_zone = true;
+            }else if(ring2_yello_start_zone){
+                ring2_yellow_end_zone = false;
+                ring2_yello_start_zone = false;
+                ring2_orange_start_zone = true;
+            }else if(ring2_orange_start_zone){
+                ring2_yellow_end_zone = false;
+                ring2_orange_start_zone = false;
+                ring2_red_zone = true;
+            }
+        }
+        //inc
+        ring1_pos++;
+        if(ring1_pos == size1) ring1_pos = 0;
+
+        //toggle
+        if(ring1_orange_end_zone){
+            ring1_orange_end_zone = false;
+            if(fit1.end_dot_or_line == Fit::Dot){
+                ring1_yellow_end_zone = true;
+            }else{
+                ring1_white_zone = true;
+            }
+        }else if(ring1_yellow_end_zone && (fit1.start_dot_or_line == Fit::Dot ? ring1_yello_start_zone == false : ring1_orange_start_zone == false)){
+            ring1_yellow_end_zone = false;
+            ring1_white_zone = true;
+        }
+        if((ring1_pos+2)%size1 == cmstart1 && fit1.start_dot_or_line == Fit::Dot){
+            ring1_white_zone = false;
+            ring1_yello_start_zone = true;
+        }else if((ring1_pos+1)%size1 == cmstart1 && fit1.start_dot_or_line == Fit::Line){
+            ring1_white_zone = false;
+            ring1_orange_start_zone = true;
+        }else if(ring1_yello_start_zone){
+            ring1_yellow_end_zone = false;
+            ring1_yello_start_zone = false;
+            ring1_orange_start_zone = true;
+        }else if(ring1_orange_start_zone){
+            ring1_yellow_end_zone = false;
+            ring1_orange_start_zone = false;
+            ring1_red_zone = true;
         }
     }
     return false;

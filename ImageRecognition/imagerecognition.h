@@ -1,45 +1,31 @@
 #ifndef IMAGERECOGNITION_H
 #define IMAGERECOGNITION_H
 
-
-#include "expandedpolygon.h"
 #include "imagerecognition_global.h"
-#include "expandedpolygon.h"
-#include "singlepolygondisplay.h"
+
 #include "field.h"
-#include <iostream>
-#include <random>
-#include <algorithm>
-#include <string>
-#include <exception>
-#include <stdexcept>
-#include <opencv2/core/core.hpp>
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/photo/photo.hpp>
-#include <opencv2/photo.hpp>
+#include "expandedpolygon.h"
 
 class IMAGERECOGNITIONSHARED_EXPORT ImageRecognition
 {
 
 public:
-    procon::Field run(cv::Mat raw_flame_image, cv::Mat raw_pieces_image);
+    procon::Field run(cv::Mat raw_frame_image, cv::Mat raw_pieces_image);
 
-    inline cv::Mat getRawPiecesPic(){
-        return std::move(raw_colored_pic);
+    const cv::Mat& getRawPiecesPic(){
+        return raw_colored_pic;
     }
 
-    inline std::vector<cv::Point> getRawPiecesPos(){
-        return std::move(raw_pieces_pos);
+    const std::vector<cv::Point>& getRawPiecesPos(){
+        return raw_pieces_pos;
     }
 
-    inline std::vector<cv::Vec3b> getRawRandomColors(){
-        return std::move(raw_random_colors);
+    const std::vector<cv::Vec3b>& getRawRandomColors(){
+        return raw_random_colors;
     }
 
 private:
-    cv::Mat preprocessingFlame(cv::Mat image);
+    cv::Mat preprocessingFrame(cv::Mat image);
     std::vector<cv::Mat> preprocessingPieces(cv::Mat image);
     std::vector<std::vector<cv::Vec4f>> LineDetection(std::vector<cv::Mat> const& images);
     std::vector<polygon_t> Vectored(std::vector<std::vector<cv::Vec4f>> const& lines);
@@ -51,7 +37,6 @@ private:
         int ch2Lower, int ch2Upper,
         int ch3Lower, int ch3Upper
         );
-    std::vector<SinglePolygonDisplay*> disp;
     cv::Mat raw_pieces_pic;
     cv::Mat raw_colored_pic;
     std::vector<cv::Point> raw_pieces_pos;

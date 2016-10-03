@@ -2,25 +2,21 @@
 #define FIELD_H
 
 #include "expandedpolygon.h"
-#include <iostream>
-#include <vector>
-#include <array>
-#include <boost/geometry.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/algorithms/disjoint.hpp>
 
 namespace procon {
 class Field
 {
 private:
+    std::bitset<50> piece_id;
+private:
     //フィールド上のピース&フレーム
-    procon::ExpandedPolygon field_flame;
+    procon::ExpandedPolygon field_frame;
     std::vector<procon::ExpandedPolygon> field_pieces;
 
     //素のピース&フレーム
-    procon::ExpandedPolygon elementary_flame;
+    procon::ExpandedPolygon elementary_frame;
     std::vector<procon::ExpandedPolygon> elementary_pieces;
+    std::vector<procon::ExpandedPolygon> elementary_inverse_pieces;
 
     //ピースが置かれているか保存する変数
     std::array<bool,50> isPlaced;
@@ -30,30 +26,40 @@ private:
     double min_side;
 
 public:
+    // Public Member
+    double evaluation;
+
+    bool operator || (Field & field_id);
+
     //constructor
     Field();
 
     //setter
-    void setFlame(procon::ExpandedPolygon const& flame);
+    void setFrame(procon::ExpandedPolygon const& frame);
     void setPiece(polygon_t piece);
     void setPiece(procon::ExpandedPolygon piece);
     void setPiece(procon::ExpandedPolygon piece,double x, double y);
     void setPiece(procon::ExpandedPolygon piece,int n,double x = 0,double y = 0);
-    void setElementaryFlame(procon::ExpandedPolygon const& flame);
+    void setElementaryFrame(procon::ExpandedPolygon const& frame);
     void setElementaryPieces(std::vector<procon::ExpandedPolygon> const& pieces);
     void setIsPlaced(std::array<bool,50> const& IsPlaced);
+    void setIsPlaced(int const& piece_id);
 
     //getter
     std::vector<procon::ExpandedPolygon> const& getPieces() const;
     procon::ExpandedPolygon const& getPiece(int const& n) const;
-    procon::ExpandedPolygon const& getFlame() const;
-    procon::ExpandedPolygon const& getElementaryFlame() const;
+    procon::ExpandedPolygon const& getFrame() const;
+    procon::ExpandedPolygon const& getElementaryFrame() const;
     std::vector<procon::ExpandedPolygon> const& getElementaryPieces() const;
+    std::vector<procon::ExpandedPolygon> const& getElementaryInversePieces() const;
     std::array<bool,50> const& getIsPlaced() const;
-    int getFieldScore();
-    int getPiecesSize();
-    double getMinAngle();
-    double getMinSide();
+    int getFieldScore() const;
+    int getPiecesSize() const;
+    double getMinAngle() const;
+    double getMinSide() const;
+    std::bitset<50> const& getPieceID() const;
+    std::vector<double> const& getSlopeID() const;
+    std::vector<point_t> const& getCoordID() const;
 
     //任意の位置のピースを消去
     void removePiece(int n);
@@ -62,7 +68,7 @@ public:
     bool isPuttable(procon::ExpandedPolygon polygon);
 
     //コンソール出力
-    void printFlame();
+    void printFrame();
     void printPiece();
 
     //translate polygon
@@ -70,6 +76,9 @@ public:
 
     //最小辺最小角を計算する
     void calcMinAngleSide();
+
+    //フィールドのIDを計算する
+    void calcFieldID();
 };
 }
 #endif // FIELD_H

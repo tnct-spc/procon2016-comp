@@ -2,23 +2,39 @@
 #define ALGORITHMWRAPPER_H
 
 #include "field.h"
-#include "utilities.h"
-#include "Utils/polygonconnector.h"
-#include "Utils/fit.h"
-#include "polygonviewer.h"
+#include "expandedpolygon.h"
+#include "Utils/evaluation.h"
+#include "answerdock.h"
+#include "fit.h"
 
-class AlgorithmWrapper
+class AlgorithmWrapper : public QObject
 {
+    Q_OBJECT
+
 public:
+    static constexpr double length_error = 0.05; // 単位CM
+    static constexpr double angle_error = 0.017; //単位rad 0.017rad=1°
+
+    static constexpr double ideal_min = 0.1;
+    static constexpr double ideal_max = 1.5;
+
+    static constexpr int resolution = 5;
+
+    std::vector<double> angle_frequency;
 
     AlgorithmWrapper();
+    virtual ~AlgorithmWrapper() = default;
 
-    virtual procon::Field run(procon::Field field);
+    std::shared_ptr<AnswerDock> DOCK;
+
+    void init();
+    virtual void run(procon::Field field);
+    void calcAngleFrequency(procon::Field field);
+    void submitAnswer(procon::Field field);
 
     Fit fit1,fit2;
-
-    int searchSameLength(procon::ExpandedPolygon polygon1 ,procon::ExpandedPolygon polygon2, std::vector<std::array<Fit,2>> &result);
-    Fit::DotORLine findEnd(procon::ExpandedPolygon polygon1, procon::ExpandedPolygon polygon2,int &comp1,int &comp2, double length_error, double angle_error, int &Eva);
+    std::vector<Evaluation> evaluateCombinationByAngle(procon::ExpandedPolygon const& frame, procon::ExpandedPolygon const& piece);
+    std::vector<Evaluation> evaluateCombinationByLength(procon::ExpandedPolygon const& frame, procon::ExpandedPolygon const& piece);
 
     typedef struct PieceAssesment{
         //評価値
@@ -39,6 +55,9 @@ public:
         double length_capacity;
 
     } SidePair;
+
+signals:
+    void throwAnswer(procon::Field field);
 
 };
 

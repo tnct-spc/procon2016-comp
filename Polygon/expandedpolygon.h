@@ -1,18 +1,8 @@
 #ifndef EXPANDEDPOLYGON_H
 #define EXPANDEDPOLYGON_H
-#include <iostream>
-#include <exception>
-#include <stdexcept>
-#include <vector>
-#include <cmath>
-#include <numeric>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/geometries/ring.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/algorithms/distance.hpp>
-#include <boost/geometry/algorithms/transform.hpp>
-#include <boost/assign/list_of.hpp>
-#include "utility"
+
+#include "fit.h"
+
 namespace bg = boost::geometry;
 using point_t = bg::model::d2::point_xy<double>;
 using ring_t = bg::model::ring<point_t>;
@@ -37,10 +27,7 @@ class ExpandedPolygon
 
     polygon_t polygon;
 
-    double difference_of_default_degree = 0;
-
-    double centerx = 0;
-    double centery = 0;
+    std::vector<procon::ExpandedPolygon> jointed_pieces;
 
     //flag
     bool calcSize_flag = false;
@@ -54,6 +41,8 @@ protected:
 
 
 public:
+    // Public Member
+
     //constructor
     ExpandedPolygon(int id_ = -1);
     ExpandedPolygon(std::vector<int> multi_ids_);
@@ -72,10 +61,13 @@ public:
     int getId() const;
     std::vector<int> getMultiIds() const;
     std::string makeMultiIdString() const;
+    std::vector<procon::ExpandedPolygon> const& getJointedPieces() const;
 
     //setter
     void setMultiIds(std::vector<int> multi_ids_);
-    void setPolygon(polygon_t const & p);
+    void resetPolygonForce(polygon_t const & p);
+    void pushNewJointedPolygon(polygon_t const & new_frame, procon::ExpandedPolygon const& jointed_polygon);
+    void replaceJointedPieces(std::vector<procon::ExpandedPolygon> pieces);
 
     //operator
     ExpandedPolygon operator = (ExpandedPolygon const& p);
@@ -86,10 +78,18 @@ public:
     void inversePolygon();
     void rotatePolygon(double degree);
     void translatePolygon(double x,double y);
-    
+
     void setPolygonAngle(double degree);
     void setPolygonPosition(double x,double y);
 
+    void sortJointedPieces();
+
+    double difference_of_default_degree = 0;
+
+    double centerx = 0;
+    double centery = 0;
+
+    bool is_inverse = false;
 };
 
 }

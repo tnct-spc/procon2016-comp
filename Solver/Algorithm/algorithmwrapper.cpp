@@ -1,128 +1,131 @@
 #include "algorithmwrapper.h"
+
+#include "utilities.h"
+#include "Utils/polygonconnector.h"
+#include "polygonviewer.h"
 #include "utilities.h"
 #include "field.h"
-
-#include <math.h>
-
-#define PI 3.141592
-
+#include "Evaluation/searchsamelength.h"
 #include "lengthalgorithm.h"
+#include <QTimer>
+
+void AlgorithmWrapper::init()
+{
+    DOCK = std::make_shared<AnswerDock>();
+    DOCK->showMinimized();
+}
+
+void AlgorithmWrapper::submitAnswer(procon::Field field)
+{
+    emit throwAnswer(field);
+    // Wait 1msec
+    QEventLoop loop;
+    QTimer::singleShot(500, &loop, SLOT(quit()));
+    loop.exec();
+}
+
 
 AlgorithmWrapper::AlgorithmWrapper()
 {
 
 }
 
-procon::Field AlgorithmWrapper::run(procon::Field field)
+void AlgorithmWrapper::run(procon::Field field)
 {
-    return field;
+    field.setFrame(field.getElementaryFrame());
+    submitAnswer(field);
+    return;
 }
 
-int AlgorithmWrapper::searchSameLength(procon::ExpandedPolygon polygon1, procon::ExpandedPolygon polygon2, std::vector<std::array<Fit,2>> &result)
+void AlgorithmWrapper::calcAngleFrequency(procon::Field field)
 {
-    /*許容誤差指定*/
-    constexpr double length_error = 0.05; // 単位CM
-    constexpr double angle_error = 0.017; //単位rad 0.017rad=1°
-    double comped_first = 0;
-    double comping_first = 0;
-    int Eva = 0;
-    int maxEva = 0;
-    std::array<Fit,2> fits;
+    angle_frequency.resize(360 / resolution);
+    constexpr double to_deg = 180 / 3.1415926535;
+    int count = 0;
+    auto pieces = field.getElementaryPieces();
+    for (auto piece : pieces) {
+        auto angles = piece.getSideAngle();
+        for (auto angle : angles) {
+            int num = static_cast<int>(angle * to_deg / 5);
+            angle_frequency.at(num) += 1;
+            count++;
+        }
+    }
+    for (auto& angle : angle_frequency) {
+        if (angle == 0) {
+            angle = 1;
+        }
+    }
 
-    for (int i = 0; i < polygon1.getSize(); ++i) { //角度のみ探索
-        comped_first = polygon1.getSideAngle()[i];
-        for (int j = 0; j < polygon2.getSize(); ++j) {
-            comping_first = polygon2.getSideAngle()[j];
-            //if (procon::nearlyEqual(comped_first,comping_first,angle_error)) {
-            if((M_PI * 2) - angle_error * 2 < (comping_first + comped_first) && (comping_first + comped_first) < (M_PI * 2) + angle_error * 2){
-                Eva++;
+    double real_max = *(std::max_element(angle_frequency.begin(),angle_frequency.end()));
+    double real_min = *(std::min_element(angle_frequency.begin(),angle_frequency.end()));
 
-                int start_polygon1 = i;
-                int start_polygon2 = j;
-                Fit::DotORLine dot_or_line = AlgorithmWrapper::findEnd(polygon2, polygon1, start_polygon2, start_polygon1,length_error, angle_error, Eva);
-                fits.at(0).end_dot_or_line = dot_or_line;
-                fits.at(0).end_id=start_polygon1;
-                fits.at(1).end_dot_or_line = dot_or_line;
-                fits.at(1).end_id=start_polygon2;
+    for (auto& angle : angle_frequency) {
+        auto linerFunction = [&](double x)->double
+        {
+            return ((ideal_max - ideal_min) / (real_min - real_max)) * (x - real_max) + ideal_min;
+        };
 
-                //重複していたら追加しない
-                bool isDuplicate = false;
-                for(auto accept_fits : result){
-                    if(fits[0].end_id == accept_fits[0].end_id &&
-                       fits[1].end_id == accept_fits[1].end_id){
-                        isDuplicate = true;
-                        break;
-                    }
+        angle = linerFunction(angle);
+    }
+}
+
+std::vector<Evaluation> AlgorithmWrapper::evaluateCombinationByAngle(procon::ExpandedPolygon const& frame, procon::ExpandedPolygon const& piece)
+{
+    double frame_first = 0;
+    double piece_first = 0;
+    std::vector<Evaluation> evaluations;
+
+    for (unsigned int k = 0; k < frame.getPolygon().inners().size(); ++k){
+        const int inner_size = static_cast<int>(frame.getPolygon().inners().at(k).size() - 1);
+        for (int i = 0; i < inner_size; ++i) {
+            frame_first = frame.getInnersSideAngle().at(k).at(i);
+            for (int j = 0; j < piece.getSize(); ++j) {
+                piece_first = piece.getSideAngle()[j];
+
+                if(Utilities::nearlyEqual(frame_first,piece_first,angle_error)){
+                    std::array<Fit,2> fits;
+                    fits.at(0).start_id = i;
+                    fits.at(0).end_id = i;
+                    fits.at(0).frame_inner_pos = k;
+                    fits.at(0).start_dot_or_line = Fit::Dot;
+                    fits.at(0).end_dot_or_line = Fit::Dot;
+                    fits.at(1).start_id = j;
+                    fits.at(1).end_id = j;
+                    fits.at(1).start_dot_or_line = Fit::Dot;
+                    fits.at(1).end_dot_or_line = Fit::Dot;
+                    Evaluation eva;
+                    eva.frame_id = k;
+                    eva.fits = fits;
+                    eva.evaluation = bg::area(piece.getPolygon()) * angle_frequency.at((int)piece_first / resolution);
+                    evaluations.push_back(eva);
                 }
-
-                if(!isDuplicate){
-                    start_polygon1 = i;
-                    start_polygon2 = j;
-                    dot_or_line = AlgorithmWrapper::findEnd(polygon1, polygon2, start_polygon1, start_polygon2,length_error, angle_error, Eva);
-                    fits.at(0).start_dot_or_line = dot_or_line;
-                    fits.at(0).start_id=start_polygon1;
-                    fits.at(1).start_dot_or_line = dot_or_line;
-                    fits.at(1).start_id=start_polygon2;
-                    if (Eva >= 1){
-                        result.push_back(fits);
-                        if (Eva > maxEva){
-                            maxEva = Eva;
-                        }
-                    }
-                }
-                Eva = 0;
             }
         }
     }
-    return maxEva;
+    return evaluations;
 }
 
-Fit::DotORLine AlgorithmWrapper::findEnd(procon::ExpandedPolygon polygon1, procon::ExpandedPolygon polygon2,int &comp1,int &comp2, double length_error, double angle_error, int &Eva)
+
+std::vector<Evaluation> AlgorithmWrapper::evaluateCombinationByLength(procon::ExpandedPolygon const& frame, procon::ExpandedPolygon const& piece)
 {
-    double comped;
-    double comping;
-    for (int r=0; r<polygon1.getSize(); r++){
-        //decrement comp1
-        comp1--;
-        if (comp1 < 0) {
-            comp1=polygon1.getSize()-1;
-        }
-        //compare LENGTH comp1 <=> comp2
-        comped=polygon1.getSideLength()[comp1];
-        comping=polygon2.getSideLength()[comp2];
-        if (comped - (length_error*2) < comping && comping < comped + (length_error*2)){
-            //increment Eva
-            Eva++;
-        } else {
-            //increment comp1
-            if (comp1 == polygon1.getSize()-1){
-                comp1=-1;
-            }
-            comp1++;
-            //return
-            return Fit::Dot;
+    std::vector<Evaluation> evaluations;
 
-        }
+    std::vector<std::array<Fit,2>> fits;
+    std::vector<int> eva_point = SearchSameLength::evaluateMatching(frame, piece, fits);
 
-        //increment comp2
-        comp2++;
-        if (comp2 > polygon2.getSize()-1){
-            comp2=0;
-        }
-        //compare ANGLE comp1 <=> comp2
-        comped=polygon1.getSideAngle()[comp1];
-        comping=polygon2.getSideAngle()[comp2];
-        if ((M_PI * 2) - angle_error * 2 < (comping + comped) && (comping + comped) < (M_PI * 2) + angle_error * 2){
-            //increment Eva
-            Eva++;
-        } else {
-            //decrement comp2
-            if (comp2 == 0){
-                comp2=polygon2.getSize();
-            }
-            comp2--;
-            //return
-            return Fit::Line;
+    for(unsigned int fit_number=0; fit_number < fits.size(); ++fit_number){
+        if(eva_point[fit_number] > 0){
+            Evaluation eva;
+            eva.frame_id = fits[fit_number].at(0).frame_inner_pos;
+            eva.fits = fits[fit_number];
+            eva.evaluation = eva_point[fit_number];
+            evaluations.push_back(eva);
         }
     }
+
+    return evaluations;
 }
+
+
+

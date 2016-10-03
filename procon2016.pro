@@ -1,11 +1,12 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    Polygon \
     Utilities\
+    Polygon \
     ImageRecognition \
     DisplayAnswer \
     Solver \
     ProbMaker \
     Hazama \
-    Test
+    Test \
+    Slave
