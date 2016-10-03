@@ -182,17 +182,69 @@ void Hazama::run()
             //環境によっては動かない
             //std::string frame_path = QFileDialog::getOpenFileName(this,"input frame picture","./../../procon2016-comp/picture/").toStdString();
             //std::string pieces_path = QFileDialog::getOpenFileName(this,"input pieces picture","./../../procon2016-comp/picture/").toStdString();
+            //        PDATA = imrec.run(flame, pieces);
 
             raw_frame = cv::imread(frame_path, 1);
             raw_pieces = cv::imread(pieces_path, 1);
         }
 
         /*Image Recognition*/
-        PDATA = imrec.run(raw_frame, raw_pieces);
+        {
+            procon::ExpandedPolygon Eframe(0);
+            procon::ExpandedPolygon Epiece1(1);
+            procon::ExpandedPolygon Epiece2(2);
+            procon::ExpandedPolygon result;
+
+            polygon_t sample11;
+            sample11.outer().push_back(point_t(0,0));
+            sample11.outer().push_back(point_t(0,30));
+            sample11.outer().push_back(point_t(30,30));
+            sample11.outer().push_back(point_t(30,0));
+            sample11.outer().push_back(point_t(0,0));
+            sample11.inners().push_back(polygon_t::ring_type());
+            sample11.inners().at(0).push_back(point_t(2,2));
+            sample11.inners().at(0).push_back(point_t(28,2));
+            sample11.inners().at(0).push_back(point_t(28,13));
+            sample11.inners().at(0).push_back(point_t(15,8));
+            sample11.inners().at(0).push_back(point_t(2,13));
+            sample11.inners().at(0).push_back(point_t(2,2));
+            sample11.inners().push_back(polygon_t::ring_type());
+            sample11.inners().at(1).push_back(point_t(2,17));
+            sample11.inners().at(1).push_back(point_t(28,17));
+            sample11.inners().at(1).push_back(point_t(28,23));
+            sample11.inners().at(1).push_back(point_t(19,28));
+            sample11.inners().at(1).push_back(point_t(2,28));
+            sample11.inners().at(1).push_back(point_t(2,17));
+
+            polygon_t piece1;
+            piece1.outer().push_back(point_t(2,2));
+            piece1.outer().push_back(point_t(15,8));
+            piece1.outer().push_back(point_t(28,2));
+            piece1.outer().push_back(point_t(2,2));
+            polygon_t piece2;
+            piece2.outer().push_back(point_t(2,17));
+            piece2.outer().push_back(point_t(15,28));
+            piece2.outer().push_back(point_t(28,17));
+            piece2.outer().push_back(point_t(2,17));
+
+            Eframe.resetPolygonForce(sample11);
+            Epiece1.resetPolygonForce(piece1);
+            Epiece2.resetPolygonForce(piece2);
+
+            PDATA.setElementaryFrame(Eframe);
+            PDATA.setElementaryPieces(std::vector<procon::ExpandedPolygon>{Epiece1,Epiece2});
+
+        }
+
+        //PDATA = imrec.run(flame, pieces);
 
         //display recognized image
-        AnswerBoard::setRawPicture(imrec.getRawPiecesPic(), imrec.getRawPiecesPos());
-        AnswerBoard::setRandomColors(imrec.getRawRandomColors());
+        //board->setRawPicture(imrec.getRawPiecesPic(), imrec.getRawPiecesPos());
+        //board->setRandomColors(imrec.getRawRandomColors());
+
+        //display recognized image
+        //AnswerBoard::setRawPicture(imrec.getRawPiecesPic(), imrec.getRawPiecesPos());
+        //AnswerBoard::setRandomColors(imrec.getRawRandomColors());
     } else if (ui->useFileData->isChecked()) {
         //環境によっては動かない
         //std::string path = QFileDialog::getOpenFileName(this).toStdString();
