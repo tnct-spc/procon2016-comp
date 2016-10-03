@@ -30,6 +30,7 @@ int Test()
 
 int main(int argc, char *argv[])
 {
+
     std::cout<<"***START TEST***"<<std::endl;
     QApplication a(argc, argv);
 

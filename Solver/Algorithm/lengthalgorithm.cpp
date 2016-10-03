@@ -9,6 +9,7 @@
 
 lengthalgorithm::lengthalgorithm()
 {
+
 }
 
 void lengthalgorithm::run(procon::Field field)
@@ -23,7 +24,7 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 {
 
     // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
-    if (fabs(remaining_length) < 1.0)
+    if (fabs(remaining_length) < 0.1)
     {
 
         // 破片とその辺の組み合わせを保存
@@ -184,6 +185,25 @@ int lengthalgorithm::clearOverlap(int frame,int com_num)
     return check;
 }
 
+int lengthalgorithm::clearEnd(int frame,int com_num)
+{
+    // その並び順が削除されたかを確認
+    int check=0;
+
+    for (int front_com = 0; front_com < (int)g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()].size(); front_com++)
+    {
+        int frame1_piece = g_cleared_sort[frame][com_num][g_cleared_sort.size() - 1].piece;
+        int frame2_piece = g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][0].piece;
+        if (frame1_piece == frame2_piece)
+        {
+            return check;
+        }
+    }
+    g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
+    check = 1;
+    return check;
+}
+
 void lengthalgorithm::test()
 {
     // テストデータをセットアップ
@@ -193,52 +213,51 @@ void lengthalgorithm::test()
     procon::ExpandedPolygon polygon4(0);
 
     polygon_t sample11;
-    sample11.outer().push_back(point_t(0.00000000032,0.00000000021));
-    sample11.outer().push_back(point_t(0.00000000043,4.00000000093));
-    sample11.outer().push_back(point_t(2.00000000056,0.00000000079));
-    sample11.outer().push_back(point_t(0.00000000043,0.00000000069));
+    sample11.outer().push_back(point_t(0.0,0.0));
+    sample11.outer().push_back(point_t(0.0,4.0));
+    sample11.outer().push_back(point_t(2.0,0.0));
+    sample11.outer().push_back(point_t(0.0,0.0));
 
     polygon_t sample12;
-    sample12.outer().push_back(point_t(2.00000000033,0.00000000013));
-    sample12.outer().push_back(point_t(1.00000000011,2.00000000069));
-    sample12.outer().push_back(point_t(3.00000000034,2.00000000056));
-    sample12.outer().push_back(point_t(3.00000000079,0.00000000032));
-    sample12.outer().push_back(point_t(2.00000000032,0.00000000079));
+    sample12.outer().push_back(point_t(2.0,0.0));
+    sample12.outer().push_back(point_t(1.0,2.0));
+    sample12.outer().push_back(point_t(3.0,2.0));
+    sample12.outer().push_back(point_t(3.0,0.0));
+    sample12.outer().push_back(point_t(2.0,0.0));
 
     polygon_t sample13;
-    sample13.outer().push_back(point_t(1.00000000036,2.00000000037));
-    sample13.outer().push_back(point_t(0.00000000032,4.00000000069));
-    sample13.outer().push_back(point_t(4.00000000048,4.00000000085));
-    sample13.outer().push_back(point_t(5.00000000037,0.00000000026));
-    sample13.outer().push_back(point_t(3.00000000049,0.00000000068));
-    sample13.outer().push_back(point_t(3.00000000032,2.00000000057));
-    sample13.outer().push_back(point_t(1,2));
+    sample13.outer().push_back(point_t(1.0,2.0));
+    sample13.outer().push_back(point_t(0.0,4.0));
+    sample13.outer().push_back(point_t(4.0,4.0));
+    sample13.outer().push_back(point_t(5.0,0.0));
+    sample13.outer().push_back(point_t(3.0,0.0));
+    sample13.outer().push_back(point_t(3.0,2.0));
+    sample13.outer().push_back(point_t(1.0,2.0));
 
     polygon_t sample14;
-    sample14.outer().push_back(point_t(5.00000000085,0.00000000083));
-    sample14.outer().push_back(point_t(4.00000000032,4.00000000069));
-    sample14.outer().push_back(point_t(6.00000000064,4.00000000041));
-    sample14.outer().push_back(point_t(6.00000000096,0.00000000056));
-    sample14.outer().push_back(point_t(5.00000000032,0.00000000035));
+    sample14.outer().push_back(point_t(5.0,0.0));
+    sample14.outer().push_back(point_t(4.0,4.0));
+    sample14.outer().push_back(point_t(6.0,4.0));
+    sample14.outer().push_back(point_t(6.0,0.0));
+    sample14.outer().push_back(point_t(5.0,0.0));
 
     polygon1.resetPolygonForce(sample11);
     polygon2.resetPolygonForce(sample12);
     polygon3.resetPolygonForce(sample13);
     polygon4.resetPolygonForce(sample14);
 
-    std::vector<procon::ExpandedPolygon> pieces;
-    pieces.push_back(polygon1);
-    pieces.push_back(polygon2);
-    pieces.push_back(polygon3);
-    pieces.push_back(polygon4); 
+    g_pieces.push_back(polygon1);
+    g_pieces.push_back(polygon2);
+    g_pieces.push_back(polygon3);
+    g_pieces.push_back(polygon4);
 
     polygon_t sample_frame;
     sample_frame.inners().push_back(polygon_t::ring_type());
-    sample_frame.inners().back().push_back(point_t(0.00000000032,0.00000000047));
-    sample_frame.inners().back().push_back(point_t(6.00000000095,0.00000000076));
-    sample_frame.inners().back().push_back(point_t(6.00000000052,4.00000000051));
-    sample_frame.inners().back().push_back(point_t(0.00000000032,4.00000000096));
-    sample_frame.inners().back().push_back(point_t(0.00000000064,0.00000000032));
+    sample_frame.inners().back().push_back(point_t(0.0,0.0));
+    sample_frame.inners().back().push_back(point_t(6.0,0.0));
+    sample_frame.inners().back().push_back(point_t(6.0,4.0));
+    sample_frame.inners().back().push_back(point_t(0.0,4.0));
+    sample_frame.inners().back().push_back(point_t(0.0,0.0));
 
     g_frame.resetPolygonForce(sample_frame);
 
@@ -249,7 +268,7 @@ void lengthalgorithm::test()
     for (int f=0; f<(int)g_frame.getInnersSideAngle().at(0).size(); f++)
     {
         double frame_length = g_frame.getInnersSideLength().back()[f];
-        stacks.push_back(fitSide(frame_length,pieces));
+        stacks.push_back(fitSide(frame_length,g_pieces));
     }
 
     // 前に出てきた組み合わせを全パターンに並び替える。
@@ -281,6 +300,21 @@ void lengthalgorithm::test()
         for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
         {
             int check = clearOverlap(f,count);
+
+            // もし削除されていなかったら次の番号で実行
+            if (check == 0) count++;
+        }
+        count = 0;
+    }
+
+    printf("OK");
+
+    // すべての組み合わせについて調べる
+    for (int f=0; f<(int)g_cleared_sort.size(); f++)
+    {
+        for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
+        {
+            int check = clearEnd(f,count);
 
             // もし削除されていなかったら次の番号で実行
             if (check == 0) count++;

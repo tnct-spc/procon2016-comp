@@ -82,6 +82,7 @@ public:
 
     int clearOverlap(int frame,int com_num);
 
+    int clearEnd(int frame,int com_num);
 };
 
 #endif // LENGTHALGORITHM_H
