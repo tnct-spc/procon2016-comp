@@ -124,6 +124,37 @@ std::vector<lengthalgorithm::frame_edge_set_type> lengthalgorithm::piecesAlignme
     return sort_lists;
 }
 
+int lengthalgorithm::clearCorner(int frame,int com_num)
+{
+    int check = 0;
+
+    procon::ExpandedPolygon Polygon = g_pieces[g_cleared_sort[frame][com_num][0].piece];
+    g_frame.updatePolygon();
+    Polygon.updatePolygon();
+    double deg_corner = g_frame.getInnersSideAngle().back()[(frame + 1) % (int)g_frame.getSize()] * 180 / M_PI;
+    double deg = Polygon.getSideAngle()[(g_cleared_sort[frame][com_num][0].edge + 1) % (int)Polygon.getSize()] * 180 / M_PI;
+    if ((deg_corner - deg) < -1.0)
+    {
+        g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
+        check = 1;
+        return check;
+    }
+
+    Polygon = g_pieces[g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1].piece];
+    g_frame.updatePolygon();
+    Polygon.updatePolygon();
+    deg_corner = g_frame.getInnersSideAngle().back()[frame];
+    deg = Polygon.getSideAngle()[g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1].edge] * 180 / M_PI;
+    if ((deg_corner - deg) < -1.0)
+    {
+        g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
+        check = 1;
+        return check;
+    }
+
+    return check;
+}
+
 // 隣同士の破片が重なる場合リストから削除
 // com_num : 調べる並び順の番号
 int lengthalgorithm::clearOverlap(int frame,int com_num)
@@ -199,21 +230,25 @@ void lengthalgorithm::test()
     pieces.push_back(polygon1);
     pieces.push_back(polygon2);
     pieces.push_back(polygon3);
-    pieces.push_back(polygon4);
+    pieces.push_back(polygon4); 
 
-    std::vector<double> frames;
-    frames.push_back(6.0);
-    frames.push_back(4.0);
-    frames.push_back(6.0);
-    frames.push_back(4.0);
+    polygon_t sample_frame;
+    sample_frame.inners().push_back(polygon_t::ring_type());
+    sample_frame.inners().back().push_back(point_t(0,0));
+    sample_frame.inners().back().push_back(point_t(6,0));
+    sample_frame.inners().back().push_back(point_t(6,4));
+    sample_frame.inners().back().push_back(point_t(0,4));
+    sample_frame.inners().back().push_back(point_t(0,0));
+
+    g_frame.setPolygon(sample_frame);
 
     // 組み合わせが全て入る配列
     std::vector<frame_edge_set_type> stacks;
 
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
-    for (int f=0; f<(int)frames.size(); f++)
+    for (int f=0; f<(int)g_frame.getSize(); f++)
     {
-        stacks.push_back(fitSide(frames[f],pieces));
+        stacks.push_back(fitSide(g_frame.getSideLength()[f],pieces));
     }
 
     // 前に出てきた組み合わせを全パターンに並び替える。
@@ -224,7 +259,20 @@ void lengthalgorithm::test()
 
     // 並び順が削除されたら同じ番号でfuncを繰り返す
     int count = 0;
-    //int comb_size = (int)g_comb.size();
+
+    for (int f=0; f<(int)g_cleared_sort.size(); f++)
+    {
+        for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
+        {
+            int check = clearCorner(f,count);
+
+            // もし削除されていなかったら次の番号で実行
+            if (check == 0) count++;
+        }
+        count = 0;
+    }
+
+    printf("OK");
 
     // すべての組み合わせについて調べる
     for (int f=0; f<(int)g_cleared_sort.size(); f++)

@@ -51,6 +51,8 @@ private:
     // ピースの情報の入った配列
     std::vector<procon::ExpandedPolygon> g_pieces;
 
+    procon::ExpandedPolygon g_frame;
+
     // searchPairSide()再帰関数で、フレーム辺に入れた破片と辺の組み合わせを記録するスタック
     piece_edges_type g_comb;
 
@@ -75,6 +77,8 @@ public:
 
     // フレームごとの並び替えた組み合わせがすべて入る配列
     frame_edge_set_type g_sort_list;
+
+    int clearCorner(int frame,int com_num);
 
     int clearOverlap(int frame,int com_num);
 
