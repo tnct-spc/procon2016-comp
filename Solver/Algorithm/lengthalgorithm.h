@@ -38,7 +38,7 @@ private:
     std::vector<PieceEdge> g_sorted_pieces;
 
     //ピース辺の組み合わせ
-     typedef std::vector<PieceEdge> piece_edges_type;
+    typedef std::vector<PieceEdge> piece_edges_type;
 
     //ピース辺の組み合わせの全パターン
     typedef std::vector<piece_edges_type> frame_edge_set_type;

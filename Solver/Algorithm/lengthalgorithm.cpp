@@ -190,10 +190,22 @@ int lengthalgorithm::clearEnd(int frame,int com_num)
     // その並び順が削除されたかを確認
     int check=0;
 
-    for (int front_com = 0; front_com < (int)g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()].size(); front_com++)
+    for (int front_com = 0; front_com < g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()].size(); front_com++)
     {
-        int frame1_piece = g_cleared_sort[frame][com_num][g_cleared_sort.size() - 1].piece;
-        int frame2_piece = g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][0].piece;
+        procon::ExpandedPolygon Polygon1 = g_pieces[g_cleared_sort[frame][com_num][0].piece];
+        procon::ExpandedPolygon Polygon2 = g_pieces[g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][g_cleared_sort[frame][front_com].size() - 1].piece];
+        Polygon1.updatePolygon();
+        Polygon2.updatePolygon();
+        double deg1 = Polygon1.getSideAngle()[(g_cleared_sort[frame][com_num][0].edge + 1) % Polygon1.getSize()] * 180 / M_PI;
+        double deg2 = Polygon2.getSideAngle()[g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][g_cleared_sort[frame][front_com].size() - 1].edge] * 180 / M_PI;
+        double deg_frame = g_frame.getInnersSideAngle().back()[(frame + 1) % g_frame.getSize()] * 180 / M_PI;
+        if (deg_frame - deg1 - deg2 >= -0.1)
+        {
+            return check;
+        }
+
+        int frame1_piece = g_cleared_sort[frame][com_num][0].piece;
+        int frame2_piece = g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][g_cleared_sort[frame][front_com].size() - 1].piece;
         if (frame1_piece == frame2_piece)
         {
             return check;
