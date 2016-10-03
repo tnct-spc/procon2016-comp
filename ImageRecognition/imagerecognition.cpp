@@ -1,15 +1,16 @@
 #include "imagerecognition.h"
 
-procon::Field ImageRecognition::run(cv::Mat raw_flame_image, cv::Mat raw_pieces_image)
+procon::Field ImageRecognition::run(cv::Mat raw_frame_image, cv::Mat raw_pieces_image)
 {
-    raw_pieces_pic = cv::Mat(raw_pieces_image,cv::Rect(250,0,1450,1080));
+    //raw_pieces_pic = cv::Mat(raw_pieces_image,cv::Rect(250,0,1450,1080));
+    raw_pieces_pic = raw_pieces_image;
 
     //前処理
-    cv::Mat flame_image = preprocessingFlame(raw_flame_image);
+    cv::Mat frame_image = preprocessingFrame(raw_frame_image);
     std::vector<cv::Mat> pieces_images = preprocessingPieces(raw_pieces_image);
 
     std::vector<cv::Mat> images;
-    images.push_back(flame_image);
+    images.push_back(frame_image);
     for(cv::Mat& piece : pieces_images) images.push_back(piece);
 
     //線分検出
@@ -24,19 +25,96 @@ procon::Field ImageRecognition::run(cv::Mat raw_flame_image, cv::Mat raw_pieces_
 void ImageRecognition::threshold(cv::Mat& image)
 {
     //resize
-    image = cv::Mat(image,cv::Rect(75,0,1455,1080));
+    image = cv::Mat(image,cv::Rect(0,500,2664,3300));
+
+    /*
+    cv::namedWindow("capture",cv::WINDOW_NORMAL);
+    cv::imshow("capture",image);
+    */
+
+
+    /* kido
+    // get d
+    std::vector<cv::Mat> white_channels(3);
+    cv::Mat hsv_white;
+    cv::cvtColor(white, hsv_white, CV_BGR2HSV);
+    cv::split(hsv_white, white_channels);
+    cv::Mat whiteD = white_channels[2];
+    int rows = white.rows;
+    int cols = white.cols;
+
+    std::vector<cv::Mat> image_channels(3);
+    cv::Mat hsv_image;
+    cv::cvtColor(image, hsv_image, CV_BGR2HSV);
+    cv::split(hsv_image, image_channels);
+    cv::Mat imageD = image_channels[2];
+
+    // smooth
+    int smooth_threshold = 0;
+    for (int y = 0; y < rows; y++) for (int x = 0; x < cols; x++){
+        int av=0;
+        int av_cnt=0;
+        for (int dy = -smooth_threshold; dy < smooth_threshold; dy++) for (int dx = -smooth_threshold; dx <= smooth_threshold; dx++){
+            int ny = y + dy;
+            int nx = x + dx;
+            if(0 <= ny && ny < rows && 0 <= nx && nx < cols){
+                av_cnt++;
+                av += whiteD.at<unsigned char>(ny,nx);
+            }
+        }
+        whiteD.at<unsigned char>(y,x) = av/av_cnt;
+    }
+
+    // ave
+    unsigned long int Dsum=0;
+    for (int y = 0; y < rows; y++) for (int x = 0; x < cols; x++){
+        Dsum += whiteD.at<unsigned char>(y,x);
+    }
+    int ave = Dsum/(rows*cols);
+    std::cout<<"ave="<<ave<<std::endl;
+
+    // fit
+    for (int y = 0; y < rows; y++) for (int x = 0; x < cols; x++){
+        imageD.at<unsigned char>(y,x) += ave - whiteD.at<unsigned char>(y,x);
+    }
+
+
+    // merge d
+    image_channels[2] = imageD;
+    cv::merge(image_channels, hsv_image);
+    cv::cvtColor(hsv_image, image, CV_HSV2BGR);
+
+    */
+
+    cv::Mat normal_area,koge_area;
 
     //色抽出 H:0-180/180, S:76-255/255, B:76-153/255
-    colorExtraction(&image, &image, CV_BGR2HSV, 0, 180, 37, 255, 120, 217);
+    colorExtraction(&image, &normal_area, CV_BGR2HSV, 0, 180, 89, 255, 76, 148);
+    //colorExtraction(&image, &normal_area, CV_BGR2HSV, 0, 180, 89, 255, 76, 140);
+    colorExtraction(&image, &koge_area, CV_BGR2HSV, 5, 20, 153, 255, 43, 90);
 
     //グレースケールに変換
-    cvtColor(image,image,CV_RGB2GRAY);
+    cvtColor(normal_area,normal_area,CV_RGB2GRAY);
+    cvtColor(koge_area,koge_area,CV_RGB2GRAY);
 
     //二値化
-    cv::threshold(image, image, 0, 255, cv::THRESH_BINARY_INV);
+    cv::threshold(normal_area,normal_area, 0, 255, cv::THRESH_BINARY_INV);
+    cv::threshold(koge_area,koge_area, 0, 255, cv::THRESH_BINARY_INV);
+
+    //syn
+    cv::bitwise_and(normal_area,koge_area,image);
+
+    /*
+    cv::namedWindow("capturerer",cv::WINDOW_NORMAL);
+    cv::imshow("capturerer",image);
+    cv::namedWindow("capturer",cv::WINDOW_NORMAL);
+    cv::imshow("capturer",normal_area);
+    cv::namedWindow("capturern",cv::WINDOW_NORMAL);
+    cv::imshow("capturern",koge_area);
+    */
 }
 
-cv::Mat ImageRecognition::preprocessingFlame(cv::Mat image)
+cv::Mat ImageRecognition::preprocessingFrame(cv::Mat image)
 {
     threshold(image);
     int rows = image.rows;
@@ -228,7 +306,7 @@ std::vector<std::vector<cv::Vec4f>> ImageRecognition::LineDetection(std::vector<
         pieces_lines.push_back(std::vector<cv::Vec4f>());
 
         //LSD直線検出 引数の"scale"が重要！！！
-        cv::Ptr<cv::LineSegmentDetector> lsd = cv::createLineSegmentDetector(cv::LSD_REFINE_STD,0.50);
+        cv::Ptr<cv::LineSegmentDetector> lsd = cv::createLineSegmentDetector(cv::LSD_REFINE_STD,0.40);
         lsd->detect(image, pieces_lines[count]);
 
         //描画
@@ -419,11 +497,11 @@ std::vector<polygon_t> ImageRecognition::Vectored(std::vector<std::vector<cv::Ve
     /***ここまで***/
 
     std::vector<polygon_t> polygons;
-    bool flame_flag = true;
+    bool frame_flag = true;
     for (std::vector<cv::Vec4f> piece_lines : pieces_lines) {
         polygon_t polygon,translated_polygon;
 
-        if (flame_flag == true){
+        if (frame_flag == true){
             double min = piece_lines.at(0)[0];
             double min_subscript = 0;
             for (int i = 0;i < static_cast<int>(piece_lines.size());i++){
@@ -439,7 +517,7 @@ std::vector<polygon_t> ImageRecognition::Vectored(std::vector<std::vector<cv::Ve
 
         piece_lines = sortLines(piece_lines);
 
-        if (flame_flag == true){
+        if (frame_flag == true){
 
             std::vector<std::vector<cv::Vec4f>> rings;
             std::vector<cv::Vec4f> ring;
@@ -461,7 +539,7 @@ std::vector<polygon_t> ImageRecognition::Vectored(std::vector<std::vector<cv::Ve
             }
             scale =  30 * 4 / sum;
 
-            polygon_t outer_polygon,inner_polygon,flame_polygon;
+            polygon_t outer_polygon,inner_polygon,frame_polygon;
 
             for (int i = 0;i < static_cast<int>(piece_lines.size());i++){
                 double distance = 0;
@@ -481,21 +559,30 @@ std::vector<polygon_t> ImageRecognition::Vectored(std::vector<std::vector<cv::Ve
                 ring.push_back(piece_lines.at(i));
             }
             rings.push_back(ring);
+
+            auto tmp_rings =std::move(rings);
+            rings.clear();
+            for (auto& r : tmp_rings) {
+                if (r.size() > 2) {
+                    rings.emplace_back(std::move(r));
+                }
+            }
+
             rings.at(0) = repairLines(rings.at(0));
-            flame_polygon = convertLineToPolygon(rings.at(0));
+            frame_polygon = convertLineToPolygon(rings.at(0));
 
             for (int i = 1;i < static_cast<int>(rings.size());i++){
                 rings.at(i) = repairLines(rings.at(i));
                 rings.at(i) = removeShortLines(rings.at(i));
                 inner_polygon = convertLineToPolygon(rings.at(i));
-                flame_polygon.inners().push_back(polygon_t::ring_type());
+                frame_polygon.inners().push_back(polygon_t::ring_type());
                 for (auto point : inner_polygon.outer()) {
-                    flame_polygon.inners().back().push_back(point);
+                    frame_polygon.inners().back().push_back(point);
                 }
             }
 
-            polygons.push_back(flame_polygon);
-            flame_flag = false;
+            polygons.push_back(frame_polygon);
+            frame_flag = false;
 
         } else {
             piece_lines = repairLines(piece_lines);
@@ -509,27 +596,27 @@ std::vector<polygon_t> ImageRecognition::Vectored(std::vector<std::vector<cv::Ve
     int count = 0;
     for (auto po:polygons){
         procon::ExpandedPolygon ishowta;
-        ishowta.setPolygon(po);
+        ishowta.resetPolygonForce(po);
         count++;
         std::cout << "piece" << bg::dsv(po) << std::endl;
     }*/
-    //std::cout << "flame" << bg::dsv(polygons.at(0)) << std::endl;
+    //std::cout << "frame" << bg::dsv(polygons.at(0)) << std::endl;
     return std::move(polygons);
 }
 
 procon::Field ImageRecognition::makeField(std::vector<polygon_t> polygons){
 
     std::vector<procon::ExpandedPolygon> ex_pieces;
-    procon::ExpandedPolygon ex_flame;
+    procon::ExpandedPolygon ex_frame;
     procon::Field field;
-    bool flame_flag = true;
+    bool frame_flag = true;
 
     int piece_count = 0;
     for (auto polygon : polygons){
         //座標移動
         double translateX = 0;
         double translateY = 0;
-        if (flame_flag){
+        if (frame_flag){
             //左上が(0,0)になるように移動
             double minX=30.0,minY=30.0;
             for(auto point : polygon.outer()){
@@ -561,19 +648,19 @@ procon::Field ImageRecognition::makeField(std::vector<polygon_t> polygons){
         bg::strategy::transform::scale_transformer<double, 2, 2> reduction(scale);
         bg::transform(translated_polygon,polygon,reduction);
         bg::reverse(polygon);
-        if (flame_flag){
-            ex_flame.setPolygon(polygon);
+        if (frame_flag){
+            ex_frame.resetPolygonForce(polygon);
         } else {
             procon::ExpandedPolygon ex_polygon(piece_count);
-            ex_polygon.setPolygon(polygon);
+            ex_polygon.resetPolygonForce(polygon);
             ex_pieces.push_back(ex_polygon);
             piece_count++;
         }
-        if (flame_flag) flame_flag = false;
+        if (frame_flag) frame_flag = false;
     }
 
     field.setElementaryPieces(ex_pieces);
-    field.setElementaryFlame(ex_flame);
+    field.setElementaryFrame(ex_frame);
 
     return field;
 }

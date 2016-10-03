@@ -1,5 +1,4 @@
 #include "testjoinpolygon.h"
-#include "Utils/fit.h"
 #include "field.h"
 #include "polygonviewer.h"
 #include "Utils/polygonconnector.h"
@@ -34,8 +33,8 @@ bool TestJoinPolygon::run()
         sample12.outer().push_back(point_t(0,0));
         sample12.outer().push_back(point_t(-2.5,-5));
 
-        polygon1.setPolygon(sample11);
-        polygon2.setPolygon(sample12);
+        polygon1.resetPolygonForce(sample11);
+        polygon2.resetPolygonForce(sample12);
 
         std::array<Fit,2> join_data;
         {
@@ -88,8 +87,8 @@ bool TestJoinPolygon::run()
         sample12.outer().push_back(point_t(0,5));
         sample12.outer().push_back(point_t(5,5));
 
-        polygon1.setPolygon(sample11);
-        polygon2.setPolygon(sample12);
+        polygon1.resetPolygonForce(sample11);
+        polygon2.resetPolygonForce(sample12);
 
         std::array<Fit,2> join_data;
         {
@@ -154,8 +153,8 @@ bool TestJoinPolygon::run()
         sample12.outer().push_back(point_t(0,-1.5));
         sample12.outer().push_back(point_t(0,-2));
 
-        polygon1.setPolygon(sample11);
-        polygon2.setPolygon(sample12);
+        polygon1.resetPolygonForce(sample11);
+        polygon2.resetPolygonForce(sample12);
 
         std::array<Fit,2> join_data;
         {
@@ -164,7 +163,7 @@ bool TestJoinPolygon::run()
             fit1.start_id = 2;
             fit1.end_dot_or_line = Fit::Dot;
             fit1.end_id = 4;
-            fit1.flame_inner_pos = 1;
+            fit1.frame_inner_pos = 1;
             fit2.start_dot_or_line = Fit::Dot;
             fit2.start_id = 3;
             fit2.end_dot_or_line = Fit::Dot;

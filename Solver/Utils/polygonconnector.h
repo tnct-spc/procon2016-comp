@@ -4,7 +4,6 @@
 #include "expandedpolygon.h"
 #include "field.h"
 #include "fit.h"
-#include "Utils/fit.h"
 
 using Ring = std::vector<point_t>;
 
@@ -21,7 +20,7 @@ private:
 
     PolygonConnector();
     static Ring popRingByPolygon(procon::ExpandedPolygon& polygon, int inner_position = -1);
-    static void pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& polygon, int inner_position = -1);
+    static polygon_t pushRingToPolygonT(Ring& ring, procon::ExpandedPolygon const& polygon, int inner_position = -1);
     static bool hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2);
 
 };

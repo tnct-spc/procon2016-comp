@@ -3,6 +3,12 @@
 
 std::vector<int> SearchSameLength::evaluateMatching(const procon::ExpandedPolygon& polygon1, const procon::ExpandedPolygon& polygon2, std::vector<std::array<Fit,2>> &result)
 {
+    auto isStraightAngle = [](double left, double right, bool is_inner_left, bool is_inner_right){
+        if(is_inner_left) left = (M_PI * 2) - left;
+        if(is_inner_right) right = (M_PI * 2) - right;
+        return (M_PI) - AlgorithmWrapper::angle_error * 2 < (left + right) && (left + right) < (M_PI) + AlgorithmWrapper::angle_error * 2;
+    };
+
     auto isMatchAngle = [](double left, double right, bool is_inner_left, bool is_inner_right){
         if(is_inner_left) left = (M_PI * 2) - left;
         if(is_inner_right) right = (M_PI * 2) - right;
@@ -35,12 +41,13 @@ std::vector<int> SearchSameLength::evaluateMatching(const procon::ExpandedPolygo
                 int Eva = 1;
                 std::array<Fit, 2> fits;
 
-                fits.at(0).flame_inner_pos = polygon1.getInnerSize() != 0 ? p1_inner_cnt : -1;
-                fits.at(1).flame_inner_pos = polygon2.getInnerSize() != 0 ? p2_inner_cnt : -1;
+                fits.at(0).frame_inner_pos = polygon1.getInnerSize() != 0 ? p1_inner_cnt : -1;
+                fits.at(1).frame_inner_pos = polygon2.getInnerSize() != 0 ? p2_inner_cnt : -1;
                 fits.at(0).start_dot_or_line = dot_or_line;
                 fits.at(0).start_id = p1_pos;
                 fits.at(1).start_dot_or_line = dot_or_line;
                 fits.at(1).start_id = p2_pos;
+                fits.at(0).is_start_straight = isStraightAngle(polygon1_angles[p1_pos], polygon2_angles[p2_pos], polygon1.getInnerSize() != 0, polygon2.getInnerSize() != 0);
 
                 auto lengthCheck = [&](){
                     //decrement comp2
@@ -106,12 +113,13 @@ std::vector<int> SearchSameLength::evaluateMatching(const procon::ExpandedPolygo
                 fits.at(0).end_id=p1_pos;
                 fits.at(1).end_dot_or_line = dot_or_line;
                 fits.at(1).end_id=p2_pos;
+                fits.at(0).is_end_straight = isStraightAngle(polygon1_angles[p1_pos], polygon2_angles[p2_pos], polygon1.getInnerSize() != 0, polygon2.getInnerSize() != 0);
 
                 //重複していたらcompare erase
                 bool is_apply = true;
                 for(unsigned int i = 0; i < result.size(); ++i){
-                    if( fits[0].flame_inner_pos == result[i][0].flame_inner_pos &&
-                        fits[1].flame_inner_pos == result[i][1].flame_inner_pos &&
+                    if( fits[0].frame_inner_pos == result[i][0].frame_inner_pos &&
+                        fits[1].frame_inner_pos == result[i][1].frame_inner_pos &&
                         fits[0].end_dot_or_line == result[i][0].end_dot_or_line &&
                         fits[0].end_id == result[i][0].end_id &&
                         fits[1].end_id == result[i][1].end_id &&

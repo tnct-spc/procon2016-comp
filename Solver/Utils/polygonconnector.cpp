@@ -6,6 +6,9 @@
 
 #include "fit.h"
 #include "utilities.h"
+#include "polygonviewer.h"
+
+//#define DEBUG_RING
 
 PolygonConnector::PolygonConnector()
 {
@@ -31,7 +34,7 @@ Ring PolygonConnector::popRingByPolygon(procon::ExpandedPolygon& polygon, int in
 }
 
 //ピースならouterを、フレームなら指定のinner(反転させる)とringを置き換える（最後の点を追加する）
-void PolygonConnector::pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& polygon, int inner_position)
+polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolygon const& polygon, int inner_position)
 {
     ring.push_back(*ring.begin());
 
@@ -54,12 +57,13 @@ void PolygonConnector::pushRingToPolygon(Ring& ring, procon::ExpandedPolygon& po
         }
     }
 
-    polygon.setPolygon(new_raw_polygon);
+    return new_raw_polygon;
 }
 
 //ポリゴンを合体する関数本体 !!!!!!polygon2 mast piece
-bool PolygonConnector::joinPolygon(procon::ExpandedPolygon joined_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data)
+bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data)
 {
+#ifdef DEBUG_RING
     auto debugRing = [](Ring ring, int line){
         std::cout<<std::to_string(line)<<" : ";
         for (int i=0; i < static_cast<int>(ring.size()); i++) {
@@ -69,19 +73,22 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon joined_polygon, proco
         }
         std::cout<<std::endl;
     };
+#endif
 
     //結合情報
     Fit fit1 = join_data[0];
     Fit fit2 = join_data[1];
 
     //それぞれOuterとして持つ
-    Ring ring1 = popRingByPolygon(joined_polygon, joined_polygon.getInnerSize() == 0 ? -1 : fit1.flame_inner_pos);
+    Ring ring1 = popRingByPolygon(jointed_polygon, jointed_polygon.getInnerSize() == 0 ? -1 : fit1.frame_inner_pos);
     Ring ring2 = popRingByPolygon(piece, -1);
     int size1 = ring1.size();
     int size2 = ring2.size();
 
-    //debugRing(ring1,__LINE__);
-    //debugRing(ring2,__LINE__);
+#ifdef DEBUG_RING
+    debugRing(ring1,__LINE__);
+    debugRing(ring2,__LINE__);
+#endif
 
     //結合後に座標が一致する始点及び終点を取得
     const int complete_matching_start_pos_1 = fit1.start_dot_or_line == Fit::Dot ? fit1.start_id : fit1.start_id                  ;
@@ -116,8 +123,10 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon joined_polygon, proco
         return false;
     }
 
-    //debugRing(ring1,__LINE__);
-    //debugRing(ring2,__LINE__);
+#ifdef DEBUG_RING
+    debugRing(ring1,__LINE__);
+    debugRing(ring2,__LINE__);
+#endif
 
     // 結合　新しいRingに結合後の外周の角を入れる。
     // もし、結合端の辺の長さが等しくならない時はRing1,Ring2ともに端の角を入力。
@@ -138,6 +147,10 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon joined_polygon, proco
                 } else {
                     count = complete_matching_start_pos_2;
                 }
+                if(fit1.start_dot_or_line == Fit::Line && fit1.is_start_straight == true){
+                    // Line is straight. Skip.
+                    count++;
+                }
             }else{
                 count++;
             }
@@ -146,7 +159,12 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon joined_polygon, proco
             x = ring2[count%size2].x();
             y = ring2[count%size2].y();
             if (count % size2 == (fit2.end_dot_or_line == Fit::Dot ? (((complete_matching_end_pos_2 - 1) % size2 + size2) % size2) : complete_matching_end_pos_2)) {
-                Type = -1;
+                if(fit1.end_dot_or_line == Fit::Line && fit1.is_end_straight == true){
+                    // Line is straight. Skip.
+                    break;
+                }else{
+                    Type=-1;
+                }
             }else{
                 count++;
             }
@@ -154,19 +172,23 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon joined_polygon, proco
         new_ring.push_back(point_t(x,y));
     } while (Type != -1);
 
-    //debugRing(new_ring,__LINE__);
+#ifdef DEBUG_RING
+    debugRing(new_ring,__LINE__);
+#endif
 
     //　ポリゴンにRingを出力しておしまい
-    if(joined_polygon.getInnerSize() != 0){ //flame-piece
-        pushRingToPolygon(new_ring, joined_polygon, fit1.flame_inner_pos);
-        joined_polygon.setMultiIds(std::vector<int>{joined_polygon.getId(), piece.getId()});
-        new_polygon = std::move(joined_polygon);
-        new_polygon.jointed_pieces.push_back(piece);
+    //TODO
+    if(jointed_polygon.getInnerSize() != 0){ //frame-piece
+        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, jointed_polygon, fit1.frame_inner_pos);
+        jointed_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
+        new_polygon = std::move(jointed_polygon);
+        new_polygon.pushNewJointedPolygon(new_raw_polygon, piece);
     }else{ //piece-piece
-        new_polygon.setMultiIds(std::vector<int>{joined_polygon.getId(), piece.getId()});
-        pushRingToPolygon(new_ring, new_polygon);
-        new_polygon.jointed_pieces.push_back(joined_polygon);
-        new_polygon.jointed_pieces.push_back(piece);
+        throw "Not supported!";
+        new_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
+        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, new_polygon);
+        //new_polygon.pushNewJointedPolygon(jointed_polygon, join_data);
+        //new_polygon.pushNewJointedPolygon(piece, join_data);
     }
 
     return true;
@@ -410,10 +432,10 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
         };
 
 
-        for(unsigned int k = 1; k < ( fieeld.getFlame().getPolygon().inners().at(i).size() ) - 1; k++){
+        for(unsigned int k = 1; k < ( fieeld.getFrame().getPolygon().inners().at(i).size() ) - 1; k++){
 
-            const double distance_1 = calcPointToPointDistance(fieeld.getFlame().getPolygon().inners().at(i).at(0)
-                                                               ,fieeld.getFlame().getPolygon().inners().at(i).at(k));
+            const double distance_1 = calcPointToPointDistance(fieeld.getFrame().getPolygon().inners().at(i).at(0)
+                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(k));
 
             if(distance_1 < gosaaaaaaaaa * gosaaaaaaaaa){
 
@@ -514,15 +536,15 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
         };
 
-        const unsigned int inner_size = fieeld.getFlame().getPolygon().inners().at(i).size();
+        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
 
         Fit fit_buf;
 
         for(unsigned int k = 2; k < inner_size -1; k++ ){
 
-            const double distance_2 = calcLineToDistance(fieeld.getFlame().getPolygon().inners().at(i).at(0)
-                                                         ,fieeld.getFlame().getPolygon().inners().at(i).at(1)
-                                                         ,fieeld.getFlame().getPolygon().inners().at(i).at(k));
+            const double distance_2 = calcLineToDistance(fieeld.getFrame().getPolygon().inners().at(i).at(0)
+                                                         ,fieeld.getFrame().getPolygon().inners().at(i).at(1)
+                                                         ,fieeld.getFrame().getPolygon().inners().at(i).at(k));
 
             if(distance_2 < gosaaaaaaaaa * gosaaaaaaaaa){
 
@@ -624,12 +646,12 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
         };
 
 
-        const unsigned int inner_size = fieeld.getFlame().getPolygon().inners().at(i).size();
+        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
 
         for(unsigned int l = k + 1; l < inner_size - 1; l++ ){
 
-            const double distanceee = calcPointToPointDistance(fieeld.getFlame().getPolygon().inners().at(i).at(k)
-                                                               ,fieeld.getFlame().getPolygon().inners().at(i).at(l));
+            const double distanceee = calcPointToPointDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
+                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
 
             if(distanceee < gosaaaaaaaaa * gosaaaaaaaaa){
 
@@ -728,7 +750,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
         };
 
 
-        const unsigned int inner_size = fieeld.getFlame().getPolygon().inners().at(i).size();
+        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
 
         for(unsigned int l = 0; l < inner_size - 1; l++){
 
@@ -743,9 +765,9 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
                 break;
             }
 
-            const double distanceeeee = calcLineToDistance(fieeld.getFlame().getPolygon().inners().at(i).at(k)
-                                                           ,fieeld.getFlame().getPolygon().inners().at(i).at(k + 1)
-                                                           ,fieeld.getFlame().getPolygon().inners().at(i).at(l));
+            const double distanceeeee = calcLineToDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
+                                                           ,fieeld.getFrame().getPolygon().inners().at(i).at(k + 1)
+                                                           ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
 
 
             if(distanceeeee < ( gosaaaaaaaaa * gosaaaaaaaaa ) ){
@@ -849,12 +871,12 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
             };
 
 
-            const unsigned int inner_size = fieeld.getFlame().getPolygon().inners().at(i).size();
+            const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
 
             for(unsigned int l = k + 1; l < inner_size - 1; l++ ){
 
-                const double distanceee = calcPointToPointDistance(fieeld.getFlame().getPolygon().inners().at(i).at(k)
-                                                                   ,fieeld.getFlame().getPolygon().inners().at(i).at(l));
+                const double distanceee = calcPointToPointDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
+                                                                   ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
 
                 if(distanceee < gosaaaaaaaaa * gosaaaaaaaaa){
 
@@ -953,7 +975,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
             };
 
 
-            const unsigned int inner_size = fieeld.getFlame().getPolygon().inners().at(i).size();
+            const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
 
             for(unsigned int l = 0; l < inner_size - 1; l++){
 
@@ -968,9 +990,9 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
                     break;
                 }
 
-                const double distanceeeee = calcLineToDistance(fieeld.getFlame().getPolygon().inners().at(i).at(k)
-                                                               ,fieeld.getFlame().getPolygon().inners().at(i).at(k + 1)
-                                                               ,fieeld.getFlame().getPolygon().inners().at(i).at(l));
+                const double distanceeeee = calcLineToDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
+                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(k + 1)
+                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
 
 
                 if(distanceeeee < ( gosaaaaaaaaa * gosaaaaaaaaa ) ){
@@ -984,7 +1006,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
         };
 
-        const unsigned int inner_size = fieeld.getFlame().getPolygon().inners().at(i).size();
+        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
 
         for(unsigned int l = k; l < inner_size; ++l){
 
@@ -1018,7 +1040,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
     constexpr double gosaaaaaaaaaaaaaaaa = 0.1;
 
-    for(unsigned int i = 0; i < field.getFlame().getPolygon().inners().size(); i++){
+    for(unsigned int i = 0; i < field.getFrame().getPolygon().inners().size(); i++){
 
         /*
         std::tuple<bool,int> result = checkFirstPointHasNearPoint(i,gosaaaaaaaaaaaaaaaa,field);
@@ -1030,7 +1052,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
         std::cout << "weeeeeei" << std::get<0>(ressslut) << std::endl;
 
-        for(int a = 0; a < field.getFlame().getPolygon().inners().at(i).size(); a++){
+        for(int a = 0; a < field.getFrame().getPolygon().inners().at(i).size(); a++){
 
             std::tuple<bool,int,int> reeeesullltttt = checkPointHasNearPoint(i,a,gosaaaaaaaaaaaaaaaa,field);
             std::cout << "true:false" << std::get<0>(reeeesullltttt) << std::endl;
@@ -1039,7 +1061,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
         }
 
-        for(int a = 0; a < field.getFlame().getPolygon().inners().at(i).size(); a++){
+        for(int a = 0; a < field.getFrame().getPolygon().inners().at(i).size(); a++){
 
             std::tuple<bool,int,int> reeeesullltttt = checkPointHasNearLine(i,a,gosaaaaaaaaaaaaaaaa,field);
             std::cout << "true:false" << std::get<0>(reeeesullltttt) << std::endl;

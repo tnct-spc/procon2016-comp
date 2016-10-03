@@ -1,10 +1,8 @@
 #include "testdisplayanswer.h"
 #include "field.h"
 #include "Utils/polygonconnector.h"
-#include "Utils/fit.h"
 #include <iostream>
 #include "expandedpolygon.h"
-#include "Utils/fit.h"
 #include <cmath>
 #include <tuple>
 
@@ -31,11 +29,11 @@ bool TestDisplayAnswer::run()
 
     procon::ExpandedPolygon polygont;
 
-    polygont.setPolygon(polygon);
+    polygont.resetPolygonForce(polygon);
 
     procon::Field field;
 
-    field.setFlame(polygont);
+    field.setFrame(polygont);
 
     std::tuple<bool,bool,int,int> result = PolygonConnector::searchFieldConnection(field);
 
@@ -45,11 +43,28 @@ bool TestDisplayAnswer::run()
     std::cout << "small number:" << std::get<3>(result) << std::endl;
 
     /*
+<<<<<<< HEAD
     std::cout << fit_sample.start_dot_or_line << std::endl;
     std::cout << fit_sample.end_dot_or_line << std::endl;
     std::cout << fit_sample.flame_inner_pos << std::endl;
     std::cout << fit_sample.start_id << std::endl;
     std::cout << fit_sample.end_id << std::endl;
+=======
+    std::cout << "Hello,display!" << std::endl;
+    polygon_t b,c,d;
+    bg::exterior_ring(b) = boost::assign::list_of<point_t>(0, 0)(30, 0)(30,30)(0, 30)(0, 2)(2, 2)(2,28)(28, 28)(28, 2)(0, 2)(0,0);
+    bg::exterior_ring(c) = boost::assign::list_of<point_t>(0, 0)(0,1)(1,0)(0,0);
+    Field f;
+    PolygonExpansion hoge,huga;
+    hoge.resetPolygonForce(b);
+    huga.resetPolygonForce(c);
+    f.setFrame(hoge);
+    f.pushPiece(huga);
+    f.setPiece(huga,1919);
+    f.printFrame();
+    f.printPiece();
+    disp->setField(f);
+>>>>>>> develop
     */
 
     return true;
