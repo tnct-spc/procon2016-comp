@@ -1042,6 +1042,11 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vecto
                 if(l > (inner_size - 2)){
                     break;
                 }
+                if(k == 0){
+                    if(l == (inner_size - 3)){
+                        break;
+                    }
+                }
 
                 const double distanceeeee = calcLineToDistance(inner.at(k)
                                                                ,inner.at(k + 1)
