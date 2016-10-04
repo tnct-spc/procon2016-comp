@@ -277,13 +277,13 @@ void procon::ExpandedPolygon::resetPolygonForce(polygon_t const& p)
     jointed_pieces.clear();
 }
 
-void procon::ExpandedPolygon::pushNewJointedPolygon(const polygon_t &new_frame, const procon::ExpandedPolygon &jointed_polygon)
+void procon::ExpandedPolygon::pushNewJointedPolygon(/*const polygon_t &new_frame, */const procon::ExpandedPolygon &jointed_polygon)
 {
     // Add piece to jointed_pieces
     jointed_pieces.push_back(jointed_polygon);
 
     // Replace raw polygon
-    polygon = new_frame;
+    //polygon = new_frame;
 
     // Update polygon
     this->updatePolygon(true);

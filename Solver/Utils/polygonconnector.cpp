@@ -34,7 +34,7 @@ Ring PolygonConnector::popRingByPolygon(procon::ExpandedPolygon& polygon, int in
 }
 
 //ピースならouterを、フレームなら指定のinner(反転させる)とringを置き換える（最後の点を追加する）
-polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolygon const& polygon, int inner_position)
+polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolygon const& polygon, int inner_position, bool add_new_frame_flag)
 {
     ring.push_back(*ring.begin());
 
@@ -51,9 +51,17 @@ polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolyg
         for(int i=0; i < ring_size; ++i){
             inner.push_back(ring[i]);
         }
-        new_raw_polygon.inners().at(inner_position).clear();
-        for(auto point : inner){
-            new_raw_polygon.inners().at(inner_position).push_back(point);
+        if(add_new_frame_flag==false){
+            new_raw_polygon.inners().at(inner_position).clear();
+            for(auto point : inner){
+                new_raw_polygon.inners().at(inner_position).push_back(point);
+            }
+        }else{
+            new_raw_polygon.inners().push_back(polygon_t::ring_type());
+            inner_position = new_raw_polygon.inners().size()-1;
+            for(auto point : inner){
+                new_raw_polygon.inners().at(inner_position).push_back(point);
+            }
         }
     }
 
@@ -61,7 +69,7 @@ polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolyg
 }
 
 //ポリゴンを合体する関数本体 !!!!!!polygon2 mast piece
-bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data)
+bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& updated_frame, std::array<Fit,2> join_data)
 {
 #ifdef DEBUG_RING
     auto debugRing = [](Ring ring, int line){
@@ -74,6 +82,11 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
         std::cout<<std::endl;
     };
 #endif
+
+    bool first_attach_push_new_frame = true;
+    updated_frame = jointed_polygon;
+    // join piece into updated Frame
+    updated_frame.pushNewJointedPolygon(piece);
 
     //結合情報
     Fit fit1 = join_data[0];
@@ -172,7 +185,7 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
 #endif
 
     // Divide polygon to dividedFrameRings
-    std::vector<Ring> dividedFrameRings;
+    std::vector<Ring> dividedFrameRings = {new_ring};
     std::function<void(Ring)> divideFrameRing = [&divideFrameRing,&dividedFrameRings](Ring new_ring){
         int new_ring_size = new_ring.size() - 1;
 
@@ -180,6 +193,8 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
         std::tuple<bool,bool,int,int> field_divide_data = searchFieldConnection(new_ring);
 
         if(std::get<0>(field_divide_data) == true){
+            // Erase parent
+            dividedFrameRings.pop_back();
 
             // Debug
             Fit::DotORLine start_dot_or_line = std::get<1>(field_divide_data)? Fit::Dot : Fit::Line;
@@ -193,21 +208,21 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
             int seek_pos_id = -1;
 
             // Generate Left Ring
-            seek_pos_id = start_id;
-            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? end_id : Utilities::inc(end_id,new_ring_size))){
+            seek_pos_id = end_id;
+            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? start_id : Utilities::inc(start_id,new_ring_size))){
                 new_left_ring.push_back(new_ring.at(seek_pos_id));
                 seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
             }
-            new_left_ring.push_back(new_ring.at(start_id));
+            new_left_ring.push_back(new_ring.at(end_id));
 
             // Generate Right Ring
-            seek_pos_id = Utilities::inc(end_id,new_ring_size);
-            new_right_ring.push_back(new_ring.at(start_id));
-            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? start_id : start_id)){
+            seek_pos_id = Utilities::inc(start_id,new_ring_size);
+            new_right_ring.push_back(new_ring.at(end_id));
+            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? end_id : end_id)){
                 new_right_ring.push_back(new_ring.at(seek_pos_id));
                 seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
             }
-            new_right_ring.push_back(new_ring.at(start_id));
+            new_right_ring.push_back(new_ring.at(end_id));
 
             dividedFrameRings.push_back(new_left_ring);
             dividedFrameRings.push_back(new_right_ring);
@@ -230,18 +245,20 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     //}
 
     //　ポリゴンにRingを出力しておしまい
-    //TODO
-    if(jointed_polygon.getInnerSize() != 0){ //frame-piece
-        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, jointed_polygon, fit1.frame_inner_pos);
-        jointed_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
-        new_polygon = std::move(jointed_polygon);
-        new_polygon.pushNewJointedPolygon(new_raw_polygon, piece);
-    }else{ //piece-piece
-        throw "Not supported!";
-        new_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
-        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, new_polygon);
-        //new_polygon.pushNewJointedPolygon(jointed_polygon, join_data);
-        //new_polygon.pushNewJointedPolygon(piece, join_data);
+    for(auto& divided_frame_ring : dividedFrameRings){
+        if(jointed_polygon.getInnerSize() != 0){ //frame-piece
+            //add new_ring to updatedFrame
+            if(first_attach_push_new_frame){
+                first_attach_push_new_frame = false;
+                polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, fit1.frame_inner_pos);
+                updated_frame.resetPolygonForce(new_raw_frame_polygon);
+            }else{
+                polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, 0,true);
+                updated_frame.resetPolygonForce(new_raw_frame_polygon);
+            }
+        }else{ //piece-piece
+            throw "Not supported!";
+        }
     }
 
     return true;
@@ -1032,20 +1049,19 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vecto
 
             for(unsigned int l = 0; l < inner_size - 1; l++){
 
-                if(l == k){
-                    l = l + 2;
-                }
-                if(k > (inner_size - 2)){
+                if(k >= inner_size-1){
                     break;
                 }
 
-                if(l > (inner_size - 2)){
-                    break;
-                }
-                if(k == 0){
-                    if(l == (inner_size - 3)){
+                if(l == k){
+                    l = l + 2;
+                    if(l >= (inner_size - 1)){
                         break;
                     }
+                }
+
+                if(k == inner_size-2 && l==0){
+                    l = 1;
                 }
 
                 const double distanceeeee = calcLineToDistance(inner.at(k)
@@ -1080,7 +1096,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vecto
         }
 
 
-        for(unsigned int l = k; l < inner_size; ++l){
+        for(unsigned int l = 0; l < inner_size; ++l){
 
             std::tuple<bool,int,int> result_2 = checkPointHasNearLine(i,l,gosaaaaaaaaa,inner);
 

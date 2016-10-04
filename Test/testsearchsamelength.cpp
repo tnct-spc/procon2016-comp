@@ -9,6 +9,7 @@ testSearchSameLength::testSearchSameLength()
 {
 }
 bool testSearchSameLength::run(){
+    /*
     //1
     {
         procon::ExpandedPolygon polygon1(0);
@@ -112,7 +113,7 @@ bool testSearchSameLength::run(){
         result = PolygonConnector::joinPolygon(polygon1, polygon2, join_data);
         */
         //PolygonViewer::getInstance().pushPolygon(result, TO_STRING(result),50);
-
+/*
     }
     //3
     {
@@ -170,5 +171,6 @@ bool testSearchSameLength::run(){
         PolygonViewer::getInstance().pushPolygon(polygon2, TO_STRING(polygon2));
 
     }
+    */
     return true;
 }

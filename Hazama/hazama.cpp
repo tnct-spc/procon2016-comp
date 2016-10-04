@@ -200,7 +200,16 @@ void Hazama::run()
             sample11.outer().push_back(point_t(0.0000000003153264,30.000000000032535));
             sample11.outer().push_back(point_t(30.0000000011613,30.00000000061634));
             sample11.outer().push_back(point_t(30.0000000006134,0.00000000013445));
-            sample11.outer().push_back(point_t(0.000000000000613514,0.000000000023443));
+            sample11.outer().push_back(point_t(0.0000000025353,0.0000000532));
+/*
+            sample11.inners().push_back(polygon_t::ring_type());
+            sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
+            sample11.inners().at(0).push_back(point_t(28.0000000000051354,2.0000001535));
+            sample11.inners().at(0).push_back(point_t(28.00000001344,13.000000001643));
+            sample11.inners().at(0).push_back(point_t(2.000000000003154,13.000000000143));
+            sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
+            */
+            /*
             sample11.inners().push_back(polygon_t::ring_type());
             sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
             sample11.inners().at(0).push_back(point_t(28.0000000000051354,2.0000001535));
@@ -208,14 +217,30 @@ void Hazama::run()
             sample11.inners().at(0).push_back(point_t(15.00000000153,8.0000000535));
             sample11.inners().at(0).push_back(point_t(2.000000000003154,13.000000000143));
             sample11.inners().at(0).push_back(point_t(2.00000000011353,2.00000013535));
+            */
             sample11.inners().push_back(polygon_t::ring_type());
-            sample11.inners().at(1).push_back(point_t(2,17));
-            sample11.inners().at(1).push_back(point_t(28,17));
-            sample11.inners().at(1).push_back(point_t(28,23));
-            sample11.inners().at(1).push_back(point_t(19,28));
-            sample11.inners().at(1).push_back(point_t(2,28));
-            sample11.inners().at(1).push_back(point_t(2,17));
+            sample11.inners().at(0).push_back(point_t(2.0000000624,28.00000023));
+            sample11.inners().at(0).push_back(point_t(19.0000000012,28.00000000724));
+            sample11.inners().at(0).push_back(point_t(28.00000000015,23.000000000515));
+            sample11.inners().at(0).push_back(point_t(28.000000000000523,17.000000030012));
+            sample11.inners().at(0).push_back(point_t(2.000000135,17.0000000000153));
+            sample11.inners().at(0).push_back(point_t(2.00000000000512,17.000000000007654));
+            sample11.inners().at(0).push_back(point_t(2.0000000624,28.00000023));
 
+            polygon_t piece1;
+            piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
+            piece1.outer().push_back(point_t(15.00000000000531,2.0000000000123534));
+            piece1.outer().push_back(point_t(2.000000000001734,5.00000000000003250134));
+            piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
+            /*yama
+            piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
+            piece1.outer().push_back(point_t(8.500000000000531,13.0000000000123534));
+            piece1.outer().push_back(point_t(15.0000000001734,7.500000000003250134));
+            piece1.outer().push_back(point_t(21.5000000000132634,13.00000000000530134));
+            piece1.outer().push_back(point_t(28.000000000133234,2.0000000000035134));
+            piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
+            */
+            /*
             polygon_t piece1;
             piece1.outer().push_back(point_t(2.0000000000006135,2.0000000000134));
             piece1.outer().push_back(point_t(15.00000000001334,8.000000000000134));
@@ -226,13 +251,14 @@ void Hazama::run()
             piece2.outer().push_back(point_t(15,28));
             piece2.outer().push_back(point_t(28,17));
             piece2.outer().push_back(point_t(2,17));
+            */
 
             Eframe.resetPolygonForce(sample11);
             Epiece1.resetPolygonForce(piece1);
-            Epiece2.resetPolygonForce(piece2);
+            //Epiece2.resetPolygonForce(piece2);
 
             PDATA.setElementaryFrame(Eframe);
-            PDATA.setElementaryPieces(std::vector<procon::ExpandedPolygon>{Epiece1,Epiece2});
+            PDATA.setElementaryPieces(std::vector<procon::ExpandedPolygon>{Epiece1/*,Epiece2*/});
 
         }
 
