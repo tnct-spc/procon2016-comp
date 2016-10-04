@@ -14,8 +14,17 @@ lengthalgorithm::lengthalgorithm()
 
 void lengthalgorithm::run(procon::Field field)
 {
-    //fake
-    //return field;
+    field.setFrame(field.getElementaryFrame());
+    for (int p=0; p<9; p++)
+    {
+        g_pieces.push_back(field.getElementaryPieces().at(p));
+    }
+
+    for (int a=0; a<field.getElementaryFrame().getSize(); a++)
+    {
+        g_frame = field.getElementaryFrame();
+        test();
+    }
 }
 
 // rl : フレーム辺の残りの長さ
@@ -26,7 +35,6 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
     // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
     if (fabs(remaining_length) < 0.1)
     {
-
         // 破片とその辺の組み合わせを保存
         g_frame_stack.push_back(g_comb);
         return;
@@ -40,22 +48,20 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 
     // 破片の各辺を入れて再帰する
     procon::ExpandedPolygon piece;
+    piece = g_pieces[watched_piece];
     piece.updatePolygon();
 
     // 配列からExpolygonを一つ取り出す
-    piece = g_pieces[watched_piece];
     for (int e = 0; e < piece.getSize(); e++)
     {
-
         // フレーム辺の残りの長さより破片の辺が短ければ入れてみる。
         double l = piece.getSideLength()[e];
         if (l <= remaining_length)
         {
-
             // この破片と辺をスタックに積む
             // 実際のピースの情報を使う際にはpiはピースのIDに変える
             // pi_id = piece.getId();
-            g_comb.push_back(PieceEdge(watched_piece, e));
+            g_comb.push_back(PieceEdge(piece.getId(), e));
 
             // 次の破片へ再帰
             searchPairSide(remaining_length - l, watched_piece + 1);
@@ -70,11 +76,9 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 }
 
 // 扱い易いようにグローバル関数をローカル関数に変換するための関数
-lengthalgorithm::frame_edge_set_type lengthalgorithm::fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces)
+lengthalgorithm::frame_edge_set_type lengthalgorithm::fitSide(double frame)
 {
-
     // ピースの情報をグローバル化し、実行
-    g_pieces = pieces;
     g_frame_stack.clear();
     searchPairSide(frame,0);
 
@@ -132,7 +136,7 @@ int lengthalgorithm::clearCorner(int frame,int com_num)
     procon::ExpandedPolygon Polygon = g_pieces[g_cleared_sort[frame][com_num][0].piece];
     g_frame.updatePolygon();
     Polygon.updatePolygon();
-    double deg_corner = g_frame.getInnersSideAngle().back()[(frame + 1) % (int)g_frame.getSize()] * 180 / M_PI;
+    double deg_corner = g_frame.getInnersSideAngle().back()[frame] * 180 / M_PI;
     double deg = Polygon.getSideAngle()[(g_cleared_sort[frame][com_num][0].edge + 1) % (int)Polygon.getSize()] * 180 / M_PI;
     if ((deg_corner - deg) < -1.0)
     {
@@ -144,7 +148,7 @@ int lengthalgorithm::clearCorner(int frame,int com_num)
     Polygon = g_pieces[g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1].piece];
     g_frame.updatePolygon();
     Polygon.updatePolygon();
-    deg_corner = g_frame.getInnersSideAngle().back()[frame];
+    deg_corner = g_frame.getInnersSideAngle().back()[(frame + 1) % (int)g_frame.getInnersSideAngle().back().size()];
     deg = Polygon.getSideAngle()[g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1].edge] * 180 / M_PI;
     if ((deg_corner - deg) < -1.0)
     {
@@ -190,22 +194,22 @@ int lengthalgorithm::clearEnd(int frame,int com_num)
     // その並び順が削除されたかを確認
     int check=0;
 
-    for (int front_com = 0; front_com < g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()].size(); front_com++)
+    for (int front_com = 0; front_com < (int)g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().back().size()].size(); front_com++)
     {
-        procon::ExpandedPolygon Polygon1 = g_pieces[g_cleared_sort[frame][com_num][0].piece];
-        procon::ExpandedPolygon Polygon2 = g_pieces[g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][g_cleared_sort[frame][front_com].size() - 1].piece];
+        procon::ExpandedPolygon Polygon1 = g_pieces[g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1].piece];
+        procon::ExpandedPolygon Polygon2 = g_pieces[g_cleared_sort[(frame + 1) % (int)g_cleared_sort.size()][front_com][0].piece];
         Polygon1.updatePolygon();
         Polygon2.updatePolygon();
-        double deg1 = Polygon1.getSideAngle()[(g_cleared_sort[frame][com_num][0].edge + 1) % Polygon1.getSize()] * 180 / M_PI;
-        double deg2 = Polygon2.getSideAngle()[g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][g_cleared_sort[frame][front_com].size() - 1].edge] * 180 / M_PI;
-        double deg_frame = g_frame.getInnersSideAngle().back()[(frame + 1) % g_frame.getSize()] * 180 / M_PI;
+        double deg1 = Polygon1.getSideAngle()[g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1].edge] * 180 / M_PI;
+        double deg2 = Polygon2.getSideAngle()[(g_cleared_sort[(frame + 1) % (int)g_cleared_sort.size()][front_com][0].edge + 1) % Polygon2.getSize()] * 180 / M_PI;
+        double deg_frame = g_frame.getInnersSideAngle().back()[(frame + 1) % (int)g_cleared_sort.size()] * 180 / M_PI;
         if (deg_frame - deg1 - deg2 >= -0.1)
         {
             return check;
         }
 
-        int frame1_piece = g_cleared_sort[frame][com_num][0].piece;
-        int frame2_piece = g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().at(0).size()][front_com][g_cleared_sort[frame][front_com].size() - 1].piece;
+        int frame1_piece = g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1].piece;
+        int frame2_piece = g_cleared_sort[(frame + 1) % (int)g_cleared_sort.size()][front_com][0].piece;
         if (frame1_piece == frame2_piece)
         {
             return check;
@@ -218,70 +222,17 @@ int lengthalgorithm::clearEnd(int frame,int com_num)
 
 void lengthalgorithm::test()
 {
-    // テストデータをセットアップ
-    procon::ExpandedPolygon polygon1(0);
-    procon::ExpandedPolygon polygon2(0);
-    procon::ExpandedPolygon polygon3(0);
-    procon::ExpandedPolygon polygon4(0);
-
-    polygon_t sample11;
-    sample11.outer().push_back(point_t(0.0,0.0));
-    sample11.outer().push_back(point_t(0.0,4.0));
-    sample11.outer().push_back(point_t(2.0,0.0));
-    sample11.outer().push_back(point_t(0.0,0.0));
-
-    polygon_t sample12;
-    sample12.outer().push_back(point_t(2.0,0.0));
-    sample12.outer().push_back(point_t(1.0,2.0));
-    sample12.outer().push_back(point_t(3.0,2.0));
-    sample12.outer().push_back(point_t(3.0,0.0));
-    sample12.outer().push_back(point_t(2.0,0.0));
-
-    polygon_t sample13;
-    sample13.outer().push_back(point_t(1.0,2.0));
-    sample13.outer().push_back(point_t(0.0,4.0));
-    sample13.outer().push_back(point_t(4.0,4.0));
-    sample13.outer().push_back(point_t(5.0,0.0));
-    sample13.outer().push_back(point_t(3.0,0.0));
-    sample13.outer().push_back(point_t(3.0,2.0));
-    sample13.outer().push_back(point_t(1.0,2.0));
-
-    polygon_t sample14;
-    sample14.outer().push_back(point_t(5.0,0.0));
-    sample14.outer().push_back(point_t(4.0,4.0));
-    sample14.outer().push_back(point_t(6.0,4.0));
-    sample14.outer().push_back(point_t(6.0,0.0));
-    sample14.outer().push_back(point_t(5.0,0.0));
-
-    polygon1.resetPolygonForce(sample11);
-    polygon2.resetPolygonForce(sample12);
-    polygon3.resetPolygonForce(sample13);
-    polygon4.resetPolygonForce(sample14);
-
-    g_pieces.push_back(polygon1);
-    g_pieces.push_back(polygon2);
-    g_pieces.push_back(polygon3);
-    g_pieces.push_back(polygon4);
-
-    polygon_t sample_frame;
-    sample_frame.inners().push_back(polygon_t::ring_type());
-    sample_frame.inners().back().push_back(point_t(0.0,0.0));
-    sample_frame.inners().back().push_back(point_t(6.0,0.0));
-    sample_frame.inners().back().push_back(point_t(6.0,4.0));
-    sample_frame.inners().back().push_back(point_t(0.0,4.0));
-    sample_frame.inners().back().push_back(point_t(0.0,0.0));
-
-    g_frame.resetPolygonForce(sample_frame);
-
-    // 組み合わせが全て入る配列
+   // 組み合わせが全て入る配列
     std::vector<frame_edge_set_type> stacks;
 
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
-    for (int f=0; f<(int)g_frame.getInnersSideAngle().at(0).size(); f++)
+    for (int f=0; f<(int)g_frame.getInnersSideAngle().back().size(); f++)
     {
         double frame_length = g_frame.getInnersSideLength().back()[f];
-        stacks.push_back(fitSide(frame_length,g_pieces));
+        stacks.push_back(fitSide(frame_length));
     }
+
+    stacks.erase(stacks.begin() + 1);
 
     // 前に出てきた組み合わせを全パターンに並び替える。
     std::vector<frame_edge_set_type> sort_list;
@@ -304,7 +255,7 @@ void lengthalgorithm::test()
         count = 0;
     }
 
-    printf("OK");
+      printf("OK");
 
     // すべての組み合わせについて調べる
     for (int f=0; f<(int)g_cleared_sort.size(); f++)
@@ -314,18 +265,20 @@ void lengthalgorithm::test()
             int check = clearOverlap(f,count);
 
             // もし削除されていなかったら次の番号で実行
-            if (check == 0) count++;
+              if (check == 0) count++;
         }
         count = 0;
     }
 
-    printf("OK");
+     printf("OK");
 
     // すべての組み合わせについて調べる
     for (int f=0; f<(int)g_cleared_sort.size(); f++)
     {
         for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
         {
+            if (g_cleared_sort[(f + 1) % (int)g_frame.getInnersSideAngle().back().size()].size() == 0) break;
+
             int check = clearEnd(f,count);
 
             // もし削除されていなかったら次の番号で実行

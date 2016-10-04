@@ -44,7 +44,7 @@ private:
     typedef std::vector<piece_edges_type> frame_edge_set_type;
 
     /*フレームの辺にぴったりはまるピース辺の組み合わせをを全パターン探す*/
-    frame_edge_set_type fitSide(double frame, std::vector<procon::ExpandedPolygon> pieces);
+    frame_edge_set_type fitSide(double frame);
     void searchPairSide(double remaining_length, int watched_piece);
 
     /*fitSide再帰関数で使用*/

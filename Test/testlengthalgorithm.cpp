@@ -8,7 +8,7 @@ testLengthAlgorithm::testLengthAlgorithm()
 
 bool testLengthAlgorithm::run(){
     lengthalgorithm solver;
-    solver.test();
+    //solver.test();
     debugprint("OK");
     return true;
 }

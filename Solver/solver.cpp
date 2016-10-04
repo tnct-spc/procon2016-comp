@@ -7,7 +7,7 @@
 #include "Algorithm/beamsearch.h"
 #include "Algorithm/beamsearchbylength.h"
 #include "Algorithm/stepsearch.h"
-
+#include "Algorithm/lengthalgorithm.h"
 Solver::Solver()
 {
 }
@@ -21,7 +21,7 @@ Solver::~Solver()
 void Solver::run(procon::Field field, int algorithm_number)
 {
     Algorithms.push_back(new PoorAlgorithm());
-    Algorithms.push_back(new SimpleAlgorithm());
+    Algorithms.push_back(new lengthalgorithm());
     Algorithms.push_back(new HillClibming());
     Algorithms.push_back(new BeamSearch());
     Algorithms.push_back(new BeamSearchByLength());
