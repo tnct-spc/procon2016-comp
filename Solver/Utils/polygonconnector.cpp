@@ -482,7 +482,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vecto
             return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
         };
 
-        //calc length point to line
+        //calc length point to line1
         auto calcLineToDistance = [](point_t a,point_t b,point_t c)->double{
 
             struct Vec2d{
@@ -1045,9 +1045,12 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vecto
                 break;
 
             }
+        }
+
+
+        for(unsigned int l = k; l < inner_size; ++l){
 
             std::tuple<bool,int,int> result_2 = checkPointHasNearLine(i,l,gosaaaaaaaaa,inner);
-
 
             if(std::get<0>(result_2)){
 
@@ -1111,7 +1114,14 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vecto
 
         return resulttttt;
     }
-    */
+    *//*
+    std::tuple<bool,bool,int,int> resultttttttt = goHasNearPiecePoint(0,0,gosaaaaaaaaaaaaaaaa,inner);
 
-    return goHasNearPiecePoint(-1,0,gosaaaaaaaaaaaaaaaa,inner);
+    std::cout << "startnumber" << std::get<0>(resultttttttt) << std::endl;
+    std::cout << "startnumber" << std::get<1>(resultttttttt) << std::endl;
+    std::cout << "startnumber" << std::get<2>(resultttttttt) << std::endl;
+    std::cout << "startnumber" << std::get<3>(resultttttttt) << std::endl;
+
+    */
+    return goHasNearPiecePoint(0,0,gosaaaaaaaaaaaaaaaa,inner);
 }
