@@ -35,7 +35,7 @@ bool TestDisplayAnswer::run()
 
     field.setFrame(polygont);
 
-    std::tuple<bool,bool,int,int> result = PolygonConnector::searchFieldConnection(field);
+    std::tuple<bool,bool,int,int> result = PolygonConnector::searchFieldConnection(field.getElementaryFrame().getPolygon().inners().at(0));
 
     std::cout << "success:" << std::get<0>(result) << std::endl;
     std::cout << "dot or line:" << std::get<1>(result) << "(true:dot,false:line)"<< std::endl;

@@ -118,11 +118,6 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     piece.translatePolygon(move_x, move_y); //translate piece
     ring2 = popRingByPolygon(piece,-1); //update ring2
 
-    // 重複チェック！
-    if(hasConflict(ring1, ring2, fit1, fit2)){
-        return false;
-    }
-
 #ifdef DEBUG_RING
     debugRing(ring1,__LINE__);
     debugRing(ring2,__LINE__);
@@ -175,6 +170,37 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
 #ifdef DEBUG_RING
     debugRing(new_ring,__LINE__);
 #endif
+
+    // Divide polygon
+    std::vector<Ring> dividedFrameRings;
+    auto divideFrameRing = [&](Ring ring){
+        //ken-syutu
+        std::tuple<bool,bool,int,int> field_divide_data = searchFieldConnection(ring);
+        if(std::get<0>(field_divide_data) == true){
+            Fit::DotORLine start_dot_or_line = std::get<1>(field_divide_data)? Fit::Dot : Fit::Line;
+            int start_id = std::get<3>(field_divide_data);
+            int end_id = std::get<2>(field_divide_data);
+            std::cout<<"Divide!"<<start_dot_or_line<<","<<start_id<<","<<end_id<<std::endl;
+            //divide
+            /*
+            polygon1;
+            polygon2;
+            dividedFields.push_back(polygon1);
+            dividedFields.push_back(polygon2);
+            divideField(polygon1);
+            divideField(polygon2);
+            */
+        }else{
+            std::cout<<"Don't need devide."<<std::endl;
+        }
+
+    };
+    divideFrameRing(new_ring);
+
+    // 重複チェック！
+    //if(hasConflict(ring1, ring2, fit1, fit2)){
+    //    return false;
+    //}
 
     //　ポリゴンにRingを出力しておしまい
     //TODO
@@ -331,7 +357,7 @@ bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
     return false;
 }
 
-std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Field field)
+std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vector<point_t> inner)
 {
 
     struct Line{
@@ -404,7 +430,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
         if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
 
-            std::cout << "out of hani" << std::endl;
+            //std::cout << "out of hani" << std::endl;
 
             return 100.0;
 
@@ -412,7 +438,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
         if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
 
-            std::cout << "out of hani" << std::endl;
+            //std::cout << "out of hani" << std::endl;
 
             return 100.0;
         }
@@ -515,7 +541,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
             if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
 
-                std::cout << "out of hani" << std::endl;
+                //std::cout << "out of hani" << std::endl;
 
                 return 100.0;
 
@@ -523,7 +549,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
             if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
 
-                std::cout << "out of hani" << std::endl;
+                //std::cout << "out of hani" << std::endl;
 
                 return 100.0;
             }
@@ -624,7 +650,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
             if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
 
-                std::cout << "out of hani" << std::endl;
+                //std::cout << "out of hani" << std::endl;
 
                 return 100.0;
 
@@ -632,7 +658,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
             if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
 
-                std::cout << "out of hani" << std::endl;
+                //std::cout << "out of hani" << std::endl;
 
                 return 100.0;
             }
@@ -728,7 +754,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
             if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
 
-                std::cout << "out of hani" << std::endl;
+                //std::cout << "out of hani" << std::endl;
 
                 return 100.0;
 
@@ -736,7 +762,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
             if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
 
-                std::cout << "out of hani" << std::endl;
+                //std::cout << "out of hani" << std::endl;
 
                 return 100.0;
             }
@@ -781,9 +807,9 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
     };
 
-    auto goHasNearPiecePoint = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,procon::Field fieeld){
+    auto goHasNearPiecePoint = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,std::vector<point_t> inner){
 
-        auto checkPointHasNearPoint = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,procon::Field fieeld){
+        auto checkPointHasNearPoint = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,std::vector<point_t> inner){
 
             //calc length point to point
             auto calcPointToPointDistance = [](point_t start,point_t end)->double{
@@ -849,7 +875,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
                 if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
 
-                    std::cout << "out of hani" << std::endl;
+                    //std::cout << "out of hani" << std::endl;
 
                     return 100.0;
 
@@ -857,7 +883,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
                 if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
 
-                    std::cout << "out of hani" << std::endl;
+                    //std::cout << "out of hani" << std::endl;
 
                     return 100.0;
                 }
@@ -871,12 +897,12 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
             };
 
 
-            const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
+            const unsigned int inner_size = inner.size();
 
             for(unsigned int l = k + 1; l < inner_size - 1; l++ ){
 
-                const double distanceee = calcPointToPointDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
-                                                                   ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
+                const double distanceee = calcPointToPointDistance(inner.at(k)
+                                                                   ,inner.at(l));
 
                 if(distanceee < gosaaaaaaaaa * gosaaaaaaaaa){
 
@@ -888,7 +914,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
             return std::tuple<bool,int,int> {false,0,0};
         };
 
-        auto checkPointHasNearLine = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,procon::Field fieeld){
+        auto checkPointHasNearLine = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,std::vector<point_t> inner){
 
             //calc length point to point
             auto calcPointToPointDistance = [](point_t start,point_t end)->double{
@@ -953,7 +979,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
                 if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
 
-                    std::cout << "out of hani" << std::endl;
+                    //std::cout << "out of hani" << std::endl;
 
                     return 100.0;
 
@@ -961,7 +987,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
                 if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
 
-                    std::cout << "out of hani" << std::endl;
+                    //std::cout << "out of hani" << std::endl;
 
                     return 100.0;
                 }
@@ -975,7 +1001,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
             };
 
 
-            const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
+            const unsigned int inner_size = inner.size();
 
             for(unsigned int l = 0; l < inner_size - 1; l++){
 
@@ -990,9 +1016,9 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
                     break;
                 }
 
-                const double distanceeeee = calcLineToDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
-                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(k + 1)
-                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
+                const double distanceeeee = calcLineToDistance(inner.at(k)
+                                                               ,inner.at(k + 1)
+                                                               ,inner.at(l));
 
 
                 if(distanceeeee < ( gosaaaaaaaaa * gosaaaaaaaaa ) ){
@@ -1006,11 +1032,11 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
         };
 
-        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
+        const unsigned int inner_size = inner.size();
 
         for(unsigned int l = k; l < inner_size; ++l){
 
-            std::tuple<bool,int,int> result_1 = checkPointHasNearPoint(i,l,gosaaaaaaaaa,fieeld);
+            std::tuple<bool,int,int> result_1 = checkPointHasNearPoint(i,l,gosaaaaaaaaa,inner);
 
             if(std::get<0>(result_1)){
 
@@ -1020,7 +1046,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
             }
 
-            std::tuple<bool,int,int> result_2 = checkPointHasNearLine(i,l,gosaaaaaaaaa,fieeld);
+            std::tuple<bool,int,int> result_2 = checkPointHasNearLine(i,l,gosaaaaaaaaa,inner);
 
 
             if(std::get<0>(result_2)){
@@ -1040,6 +1066,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
 
     constexpr double gosaaaaaaaaaaaaaaaa = 0.1;
 
+    /*
     for(unsigned int i = 0; i < field.getFrame().getPolygon().inners().size(); i++){
 
         /*
@@ -1078,10 +1105,13 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(procon::Fi
         std::cout << "startnumber" << std::get<1>(resultttttttt) << std::endl;
         std::cout << "startnumber" << std::get<2>(resultttttttt) << std::endl;
         std::cout << "startnumber" << std::get<3>(resultttttttt) << std::endl;
-        */
+        /
 
         std::tuple<bool,bool,int,int> resulttttt = goHasNearPiecePoint(i,0,gosaaaaaaaaaaaaaaaa,field);
 
         return resulttttt;
     }
+    */
+
+    return goHasNearPiecePoint(-1,0,gosaaaaaaaaaaaaaaaa,inner);
 }

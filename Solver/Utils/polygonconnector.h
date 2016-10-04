@@ -11,7 +11,8 @@ class PolygonConnector
 {
 public:
 
-    static std::tuple<bool,bool,int,int> searchFieldConnection(procon::Field field);
+    // public because use by test
+    static std::tuple<bool,bool,int,int> searchFieldConnection(std::vector<point_t> inner);
 
     static bool joinPolygon(procon::ExpandedPolygon Polygon1, procon::ExpandedPolygon Polygon2, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data);
 private:
