@@ -171,25 +171,49 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     debugRing(new_ring,__LINE__);
 #endif
 
-    // Divide polygon
+    // Divide polygon to dividedFrameRings
     std::vector<Ring> dividedFrameRings;
-    auto divideFrameRing = [&](Ring ring){
-        //ken-syutu
-        std::tuple<bool,bool,int,int> field_divide_data = searchFieldConnection(ring);
+    std::function<void(Ring)> divideFrameRing = [&divideFrameRing,&dividedFrameRings](Ring new_ring){
+        int new_ring_size = new_ring.size();
+
+        // Search Connection
+        std::tuple<bool,bool,int,int> field_divide_data = searchFieldConnection(new_ring);
+
         if(std::get<0>(field_divide_data) == true){
+
+            // Debug
             Fit::DotORLine start_dot_or_line = std::get<1>(field_divide_data)? Fit::Dot : Fit::Line;
             int start_id = std::get<3>(field_divide_data);
             int end_id = std::get<2>(field_divide_data);
             std::cout<<"Divide!"<<start_dot_or_line<<","<<start_id<<","<<end_id<<std::endl;
-            //divide
-            /*
-            polygon1;
-            polygon2;
-            dividedFields.push_back(polygon1);
-            dividedFields.push_back(polygon2);
-            divideField(polygon1);
-            divideField(polygon2);
-            */
+
+            /* Divide and generate twice ring(=polygon) */
+            Ring new_left_ring;
+            Ring new_right_ring;
+            int seek_pos_id = -1;
+
+            // Generate Left Ring
+            seek_pos_id = start_id;
+            while(seek_pos_id == (start_dot_or_line == Fit::Dot ? end_id : Utilities::inc(end_id,new_ring_size))){
+                new_left_ring.push_back(new_ring.at(seek_pos_id));
+                Utilities::inc(seek_pos_id,new_ring_size);
+            }
+            new_left_ring.push_back(new_ring.at(start_id));
+
+            // Generate Right Ring
+            seek_pos_id = Utilities::inc(end_id,new_ring_size);
+            new_right_ring.push_back(new_ring.at(start_id));
+            while(seek_pos_id == (start_dot_or_line == Fit::Dot ? start_id : start_id)){
+                new_right_ring.push_back(new_ring.at(seek_pos_id));
+                Utilities::inc(seek_pos_id,new_ring_size);
+            }
+
+            dividedFrameRings.push_back(new_left_ring);
+            dividedFrameRings.push_back(new_right_ring);
+
+            divideFrameRing(new_left_ring);
+            divideFrameRing(new_right_ring);
+
         }else{
             std::cout<<"Don't need devide."<<std::endl;
         }
