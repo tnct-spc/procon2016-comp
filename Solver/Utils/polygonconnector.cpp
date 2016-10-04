@@ -174,7 +174,7 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     // Divide polygon to dividedFrameRings
     std::vector<Ring> dividedFrameRings;
     std::function<void(Ring)> divideFrameRing = [&divideFrameRing,&dividedFrameRings](Ring new_ring){
-        int new_ring_size = new_ring.size();
+        int new_ring_size = new_ring.size() - 1;
 
         // Search Connection
         std::tuple<bool,bool,int,int> field_divide_data = searchFieldConnection(new_ring);
@@ -183,8 +183,8 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
 
             // Debug
             Fit::DotORLine start_dot_or_line = std::get<1>(field_divide_data)? Fit::Dot : Fit::Line;
-            int start_id = std::get<3>(field_divide_data);
-            int end_id = std::get<2>(field_divide_data);
+            int start_id = std::get<2>(field_divide_data);
+            int end_id = std::get<3>(field_divide_data);
             std::cout<<"Divide!"<<start_dot_or_line<<","<<start_id<<","<<end_id<<std::endl;
 
             /* Divide and generate twice ring(=polygon) */
@@ -194,19 +194,20 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
 
             // Generate Left Ring
             seek_pos_id = start_id;
-            while(seek_pos_id == (start_dot_or_line == Fit::Dot ? end_id : Utilities::inc(end_id,new_ring_size))){
+            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? end_id : Utilities::inc(end_id,new_ring_size))){
                 new_left_ring.push_back(new_ring.at(seek_pos_id));
-                Utilities::inc(seek_pos_id,new_ring_size);
+                seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
             }
             new_left_ring.push_back(new_ring.at(start_id));
 
             // Generate Right Ring
             seek_pos_id = Utilities::inc(end_id,new_ring_size);
             new_right_ring.push_back(new_ring.at(start_id));
-            while(seek_pos_id == (start_dot_or_line == Fit::Dot ? start_id : start_id)){
+            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? start_id : start_id)){
                 new_right_ring.push_back(new_ring.at(seek_pos_id));
-                Utilities::inc(seek_pos_id,new_ring_size);
+                seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
             }
+            new_right_ring.push_back(new_ring.at(start_id));
 
             dividedFrameRings.push_back(new_left_ring);
             dividedFrameRings.push_back(new_right_ring);
@@ -219,7 +220,9 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
         }
 
     };
-    divideFrameRing(new_ring);
+    Ring covered_ring = new_ring;
+    covered_ring.push_back(new_ring.front());
+    divideFrameRing(covered_ring);
 
     // 重複チェック！
     //if(hasConflict(ring1, ring2, fit1, fit2)){
