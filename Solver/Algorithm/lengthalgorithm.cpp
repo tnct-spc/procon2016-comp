@@ -14,6 +14,7 @@ lengthalgorithm::lengthalgorithm()
 
 void lengthalgorithm::run(procon::Field field)
 {
+    // ピースとフレームを配列に入れる
     for (int p=0; p<10; p++)
     {
         g_pieces.push_back(field.getElementaryPieces().at(p));
@@ -22,6 +23,7 @@ void lengthalgorithm::run(procon::Field field)
     field.setFrame(field.getElementaryFrame());
     for (int a=0; a<field.getElementaryFrame().getSize(); a++)
     {
+        // 領域ごとにできるようにする
         g_frame = field.getElementaryFrame();
         test();
     }
@@ -31,7 +33,6 @@ void lengthalgorithm::run(procon::Field field)
 // pi : 破片番号。g_pieces[]のインデックス。
 void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
 {
-
     // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
     if (fabs(remaining_length) < 0.1)
     {
@@ -95,10 +96,15 @@ void lengthalgorithm::sortPieces(int focus)
     }
 }
 
+// 端のピースがフレームと重ならないかを確認
+// frame : フレーム番号
+// com_num : 組み合わせ番号
 bool lengthalgorithm::clearCorner(int frame,int com_num)
 {
+    // その並び順が削除されたかを確認
     bool check = true;
 
+    // 左側のピースを確認
     PieceEdge focus = g_cleared_sort[frame][com_num][0];
     procon::ExpandedPolygon Polygon = g_pieces[focus.piece];
     g_frame.updatePolygon();
@@ -112,6 +118,7 @@ bool lengthalgorithm::clearCorner(int frame,int com_num)
         return check;
     }
 
+    // 右側のピースを確認
     focus = g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1];
     Polygon = g_pieces[focus.piece];
     Polygon.updatePolygon();
@@ -128,7 +135,7 @@ bool lengthalgorithm::clearCorner(int frame,int com_num)
 }
 
 // 隣同士の破片が重なる場合リストから削除
-// com_num : 調べる並び順の番号
+// com_num : 組み合わせ番号
 bool lengthalgorithm::clearOverlap(int frame,int com_num)
 {
     // その並び順が削除されたかを確認
@@ -164,14 +171,18 @@ bool lengthalgorithm::clearEnd(int frame,int com_num)
     // その並び順が削除されたかを確認
     int check = true;
 
+    // 組み合わせの左端のピースに中も注目
     PieceEdge comp_id = g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1];
     int comp_frame_piece = comp_id.piece;
     procon::ExpandedPolygon comp_Polygon = g_pieces[comp_frame_piece];
     comp_Polygon.updatePolygon();
     double comp_deg = comp_Polygon.getSideAngle()[comp_id.edge] * 180 / M_PI;
     int next_frame = (frame + 1) % (int)g_cleared_sort.size();
+    
+    // 端に来るピースの端が入るか確認
     double deg_frame = g_frame.getInnersSideAngle().back()[next_frame] * 180 / M_PI;
 
+    // 右隣のフレームの組み合わせと確認
     for (int back_com = 0; back_com < (int)g_cleared_sort[next_frame].size(); back_com++)
     {
         PieceEdge back_id = g_cleared_sort[next_frame][back_com][0];
