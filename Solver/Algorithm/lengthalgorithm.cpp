@@ -175,15 +175,16 @@ bool lengthalgorithm::clearEnd(int frame,int com_num)
     for (int back_com = 0; back_com < (int)g_cleared_sort[next_frame].size(); back_com++)
     {
         PieceEdge back_id = g_cleared_sort[next_frame][back_com][0];
-        procon::ExpandedPolygon back_Polygon = g_pieces[back_id.piece];
-        back_Polygon.updatePolygon();
-        double back_deg = back_Polygon.getSideAngle()[(back_id.edge + 1) % back_Polygon.getSize()] * 180 / M_PI;
-        if (deg_frame - comp_deg - back_deg >= -0.1)
+
+        if (comp_frame_piece == back_id.piece)
         {
             return check;
         }
 
-        if (comp_frame_piece == back_id.piece)
+        procon::ExpandedPolygon back_Polygon = g_pieces[back_id.piece];
+        back_Polygon.updatePolygon();
+        double back_deg = back_Polygon.getSideAngle()[(back_id.edge + 1) % back_Polygon.getSize()] * 180 / M_PI;
+        if (deg_frame - comp_deg - back_deg >= -0.1)
         {
             return check;
         }
