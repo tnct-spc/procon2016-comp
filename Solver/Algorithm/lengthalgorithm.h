@@ -44,7 +44,6 @@ private:
     typedef std::vector<piece_edges_type> frame_edge_set_type;
 
     /*フレームの辺にぴったりはまるピース辺の組み合わせをを全パターン探す*/
-    frame_edge_set_type fitSide(double frame);
     void searchPairSide(double remaining_length, int watched_piece);
 
     /*fitSide再帰関数で使用*/
@@ -66,23 +65,16 @@ private:
 
 public:
 
-    /*ピース辺の組み合わせを、すべての順番で作って返す*/
-    std::vector<frame_edge_set_type> piecesAlignmentSequence(std::vector<frame_edge_set_type> stacks);
-
     void sortPieces(int watched_list);
 
-    /*pieceAlignmentSequenceの再帰関数で使用*/
-    // sortPiecesで並び替える組み合わせを入れる配列。
-    piece_edges_type g_pieces_sorted;
-
     // フレームごとの並び替えた組み合わせがすべて入る配列
-    frame_edge_set_type g_sort_list;
+    frame_edge_set_type g_frame_sort;
 
-    int clearCorner(int frame,int com_num);
+    bool clearCorner(int frame,int com_num);
 
-    int clearOverlap(int frame,int com_num);
+    bool clearOverlap(int frame,int com_num);
 
-    int clearEnd(int frame,int com_num);
+    bool clearEnd(int frame,int com_num);
 };
 
 #endif // LENGTHALGORITHM_H

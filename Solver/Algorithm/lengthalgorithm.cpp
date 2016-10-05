@@ -14,12 +14,12 @@ lengthalgorithm::lengthalgorithm()
 
 void lengthalgorithm::run(procon::Field field)
 {
-    field.setFrame(field.getElementaryFrame());
-    for (int p=0; p<9; p++)
+    for (int p=0; p<10; p++)
     {
         g_pieces.push_back(field.getElementaryPieces().at(p));
     }
 
+    field.setFrame(field.getElementaryFrame());
     for (int a=0; a<field.getElementaryFrame().getSize(); a++)
     {
         g_frame = field.getElementaryFrame();
@@ -59,8 +59,6 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
         if (l <= remaining_length)
         {
             // この破片と辺をスタックに積む
-            // 実際のピースの情報を使う際にはpiはピースのIDに変える
-            // pi_id = piece.getId();
             g_comb.push_back(PieceEdge(piece.getId(), e));
 
             // 次の破片へ再帰
@@ -75,33 +73,21 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
     searchPairSide(remaining_length, watched_piece + 1);
 }
 
-// 扱い易いようにグローバル関数をローカル関数に変換するための関数
-lengthalgorithm::frame_edge_set_type lengthalgorithm::fitSide(double frame)
-{
-    // ピースの情報をグローバル化し、実行
-    g_frame_stack.clear();
-    searchPairSide(frame,0);
-
-    // 組合せの保存されたグローバル関数をローカル関数にし返す
-    frame_edge_set_type return_stack;
-    return_stack = g_frame_stack;
-
-    return return_stack;
-}
-
 // ピースの組み合わせをすべてのパターンで並び替える。
 // focus : 並び替える組み合わせの配列での番号
 void lengthalgorithm::sortPieces(int focus)
 {
+    int stack_size = (int)g_sorted_pieces.size();
+
     // もし、最後まで調べ終わったら戻る
-    if ((int)(g_sorted_pieces.size()) <= focus)
+    if (stack_size <= focus)
     {
-        this->g_sort_list.push_back(g_sorted_pieces);
+        this->g_frame_sort.push_back(g_sorted_pieces);
         return;
     }
 
     // 破片を並び替えながら再帰していく
-    for (int i = focus; i < (int)g_sorted_pieces.size(); i++)
+    for (int i = focus; i < stack_size; i++)
     {
         std::swap(g_sorted_pieces[focus], g_sorted_pieces[i]);
         sortPieces(focus + 1);
@@ -109,51 +95,32 @@ void lengthalgorithm::sortPieces(int focus)
     }
 }
 
-// 受け取った組み合わせをすべて並び替える。
-// stacks : 並び替える組み合わせの配列
-std::vector<lengthalgorithm::frame_edge_set_type> lengthalgorithm::piecesAlignmentSequence(std::vector<lengthalgorithm::frame_edge_set_type> stacks)
+bool lengthalgorithm::clearCorner(int frame,int com_num)
 {
-    std::vector<frame_edge_set_type> sort_lists;
-    for (int f=0; f<(int)stacks.size(); f++)
-    {
-        for (int c=0; c<(int)stacks[f].size(); c++)
-        {
-            g_sorted_pieces = stacks[f][c];
-            sortPieces(0);
-        }
-        sort_lists.push_back(g_sort_list);
+    bool check = true;
 
-        // 毎フレームごとに中身をクリア
-        g_sort_list.clear();
-    }
-    return sort_lists;
-}
-
-int lengthalgorithm::clearCorner(int frame,int com_num)
-{
-    int check = 0;
-
-    procon::ExpandedPolygon Polygon = g_pieces[g_cleared_sort[frame][com_num][0].piece];
+    PieceEdge focus = g_cleared_sort[frame][com_num][0];
+    procon::ExpandedPolygon Polygon = g_pieces[focus.piece];
     g_frame.updatePolygon();
     Polygon.updatePolygon();
     double deg_corner = g_frame.getInnersSideAngle().back()[frame] * 180 / M_PI;
-    double deg = Polygon.getSideAngle()[(g_cleared_sort[frame][com_num][0].edge + 1) % (int)Polygon.getSize()] * 180 / M_PI;
+    double deg = Polygon.getSideAngle()[(focus.edge + 1) % Polygon.getSize()] * 180 / M_PI;
     if ((deg_corner - deg) < -1.0)
     {
         g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-        check = 1;
+        check = false;
         return check;
     }
 
-    Polygon = g_pieces[g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1].piece];
-    g_frame.updatePolygon();
+    focus = g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1];
+    Polygon = g_pieces[focus.piece];
     Polygon.updatePolygon();
-    deg_corner = g_frame.getInnersSideAngle().back()[(frame + 1) % (int)g_frame.getInnersSideAngle().back().size()];
-    deg = Polygon.getSideAngle()[g_cleared_sort[frame][com_num][(int)g_cleared_sort[frame][com_num].size() - 1].edge] * 180 / M_PI;
-    if ((deg_corner - deg) < -1.0)
+    deg_corner = g_frame.getInnersSideAngle().back()[(frame + 1) % (int)g_cleared_sort.size()] * 180 / M_PI;
+    deg = Polygon.getSideAngle()[focus.edge] * 180 / M_PI;
+     if ((deg_corner - deg) < -1.0)
     {
         g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-        check = 1;
+        check = false;
         return check;
     }
 
@@ -162,127 +129,144 @@ int lengthalgorithm::clearCorner(int frame,int com_num)
 
 // 隣同士の破片が重なる場合リストから削除
 // com_num : 調べる並び順の番号
-int lengthalgorithm::clearOverlap(int frame,int com_num)
+bool lengthalgorithm::clearOverlap(int frame,int com_num)
 {
     // その並び順が削除されたかを確認
-    int check=0;
+    bool check=true;
 
     // ピースが隣り合っているところを調べる
     for (int p = 0; p < (int)g_cleared_sort[frame][com_num].size() - 1; p++)
     {
         // 隣り合った左右の破片の隣り合う角を調べ180度を越さないか確かめる
-        procon::ExpandedPolygon Polygon1 = g_pieces[g_cleared_sort[frame][com_num][p].piece];
-        procon::ExpandedPolygon Polygon2 = g_pieces[g_cleared_sort[frame][com_num][p + 1].piece];
+        PieceEdge id1 = g_cleared_sort[frame][com_num][p];
+        PieceEdge id2 = g_cleared_sort[frame][com_num][p + 1];
+        procon::ExpandedPolygon Polygon1 = g_pieces[id1.piece];
+        procon::ExpandedPolygon Polygon2 = g_pieces[id2.piece];
         Polygon1.updatePolygon();
         Polygon2.updatePolygon();
-        double deg1 = Polygon1.getSideAngle()[g_cleared_sort[frame][com_num][p].edge] * 180 / M_PI;
-        double deg2 = Polygon2.getSideAngle()[(g_cleared_sort[frame][com_num][p + 1].edge + 1) % Polygon2.getSize()] * 180 / M_PI;
+        double deg1 = Polygon1.getSideAngle()[id1.edge] * 180 / M_PI;
+        double deg2 = Polygon2.getSideAngle()[(id2.edge + 1) % Polygon2.getSize()] * 180 / M_PI;
 
         // 破片同士が重なっていたら削除
         if ((180 - deg1 - deg2) < -1.0)
         {
             g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-            check = 1;
+            check = false;
             return check;
         }
     }
     return check;
 }
 
-int lengthalgorithm::clearEnd(int frame,int com_num)
+bool lengthalgorithm::clearEnd(int frame,int com_num)
 {
-    // その並び順が削除されたかを確認
-    int check=0;
 
-    for (int front_com = 0; front_com < (int)g_cleared_sort[(frame + 1) % g_frame.getInnersSideAngle().back().size()].size(); front_com++)
+    // その並び順が削除されたかを確認
+    int check = true;
+
+    PieceEdge comp_id = g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1];
+    int comp_frame_piece = comp_id.piece;
+    procon::ExpandedPolygon comp_Polygon = g_pieces[comp_frame_piece];
+    comp_Polygon.updatePolygon();
+    double comp_deg = comp_Polygon.getSideAngle()[comp_id.edge] * 180 / M_PI;
+    int next_frame = (frame + 1) % (int)g_cleared_sort.size();
+    double deg_frame = g_frame.getInnersSideAngle().back()[next_frame] * 180 / M_PI;
+
+    for (int back_com = 0; back_com < (int)g_cleared_sort[next_frame].size(); back_com++)
     {
-        procon::ExpandedPolygon Polygon1 = g_pieces[g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1].piece];
-        procon::ExpandedPolygon Polygon2 = g_pieces[g_cleared_sort[(frame + 1) % (int)g_cleared_sort.size()][front_com][0].piece];
-        Polygon1.updatePolygon();
-        Polygon2.updatePolygon();
-        double deg1 = Polygon1.getSideAngle()[g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1].edge] * 180 / M_PI;
-        double deg2 = Polygon2.getSideAngle()[(g_cleared_sort[(frame + 1) % (int)g_cleared_sort.size()][front_com][0].edge + 1) % Polygon2.getSize()] * 180 / M_PI;
-        double deg_frame = g_frame.getInnersSideAngle().back()[(frame + 1) % (int)g_cleared_sort.size()] * 180 / M_PI;
-        if (deg_frame - deg1 - deg2 >= -0.1)
+        PieceEdge back_id = g_cleared_sort[next_frame][back_com][0];
+        procon::ExpandedPolygon back_Polygon = g_pieces[back_id.piece];
+        back_Polygon.updatePolygon();
+        double back_deg = back_Polygon.getSideAngle()[(back_id.edge + 1) % back_Polygon.getSize()] * 180 / M_PI;
+        if (deg_frame - comp_deg - back_deg >= -0.1)
         {
             return check;
         }
 
-        int frame1_piece = g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1].piece;
-        int frame2_piece = g_cleared_sort[(frame + 1) % (int)g_cleared_sort.size()][front_com][0].piece;
-        if (frame1_piece == frame2_piece)
+        if (comp_frame_piece == back_id.piece)
         {
             return check;
         }
     }
     g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-    check = 1;
+    check = false;
     return check;
 }
 
 void lengthalgorithm::test()
 {
-   // 組み合わせが全て入る配列
-    std::vector<frame_edge_set_type> stacks;
-
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
     for (int f=0; f<(int)g_frame.getInnersSideAngle().back().size(); f++)
     {
         double frame_length = g_frame.getInnersSideLength().back()[f];
-        stacks.push_back(fitSide(frame_length));
+        g_frame_stack.clear();
+        searchPairSide(frame_length,0);
+        g_stacks.push_back(g_frame_stack);
     }
 
-    stacks.erase(stacks.begin() + 1);
+    //g_stacks.erase(g_stacks.begin() + 1);
 
     // 前に出てきた組み合わせを全パターンに並び替える。
-    std::vector<frame_edge_set_type> sort_list;
-    sort_list = piecesAlignmentSequence(stacks);
+    for (int f=0; f<(int)g_stacks.size(); f++)
+    {
+        for (int c=0; c<(int)g_stacks[f].size(); c++)
+        {
+            g_sorted_pieces = g_stacks[f][c];
+            sortPieces(0);
+        }
+        g_cleared_sort.push_back(g_frame_sort);
 
-    g_cleared_sort = sort_list;
+        // 毎フレームごとに中身をクリア
+        g_frame_sort.clear();
+    }
 
     // 並び順が削除されたら同じ番号でfuncを繰り返す
     int count = 0;
 
     for (int f=0; f<(int)g_cleared_sort.size(); f++)
     {
-        for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
+        int com_num =(int)g_cleared_sort[f].size();
+        for (int c = 0; c < com_num; c++)
         {
-            int check = clearCorner(f,count);
+            bool check = clearCorner(f,count);
 
             // もし削除されていなかったら次の番号で実行
-            if (check == 0) count++;
+            if (check == true) count++;
         }
         count = 0;
     }
 
-      printf("OK");
+    printf("OK");
 
     // すべての組み合わせについて調べる
     for (int f=0; f<(int)g_cleared_sort.size(); f++)
     {
-        for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
+        int com_num =(int)g_cleared_sort[f].size();
+        for (int c = 0; c < com_num; c++)
         {
-            int check = clearOverlap(f,count);
+            bool check = clearOverlap(f,count);
 
             // もし削除されていなかったら次の番号で実行
-              if (check == 0) count++;
+              if (check == true) count++;
         }
         count = 0;
     }
 
-     printf("OK");
+    printf("OK");
 
     // すべての組み合わせについて調べる
-    for (int f=0; f<(int)g_cleared_sort.size(); f++)
+    int frame_num = (int)g_cleared_sort.size();
+    for (int f=0; f<(int)frame_num; f++)
     {
-        for (int e = 0; e < (int)g_cleared_sort[f].size(); e++)
+        int com_num =(int)g_cleared_sort[f].size();
+        for (int c = 0; c < com_num; c++)
         {
-            if (g_cleared_sort[(f + 1) % (int)g_frame.getInnersSideAngle().back().size()].size() == 0) break;
+            if (g_cleared_sort[(f + 1) % frame_num].size() == 0) break;
 
-            int check = clearEnd(f,count);
+            bool check = clearEnd(f,count);
 
             // もし削除されていなかったら次の番号で実行
-            if (check == 0) count++;
+            if (check == true) count++;
         }
         count = 0;
     }
