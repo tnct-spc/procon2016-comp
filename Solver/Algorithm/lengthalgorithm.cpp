@@ -15,10 +15,16 @@ lengthalgorithm::lengthalgorithm()
 void lengthalgorithm::run(procon::Field field)
 {
     // ピースとフレームを配列に入れる
-    for (int p=0; p<10; p++)
+    for (int p=0; p<(int)field.getElementaryPieces().size(); p++)
     {
         g_pieces.push_back(field.getElementaryPieces().at(p));
     }
+
+    /*for (int p=0; p<5; p++)
+    {
+        g_pieces.push_back(field.getElementaryInversePieces().at(p));
+    }*/
+
 
     field.setFrame(field.getElementaryFrame());
     for (int a=0; a<field.getElementaryFrame().getSize(); a++)
@@ -42,7 +48,7 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
     }
 
     // すべての破片の組み合わせを試してたら再帰から抜ける。
-    if ((int)g_pieces.size() <= watched_piece)
+    if ((int)g_pieces.size() / 2 <= watched_piece)
     {
         return;
     }
@@ -96,14 +102,19 @@ void lengthalgorithm::sortPieces(int focus)
     }
 }
 
+/*void lengthalgorithm::addInversePieces(int frame, int com_num)
+{
+    for (int p=0; p<(int)g_cleared_sort[f][com_num].size(); p++)
+    {
+
+    }
+}*/
+
 // 端のピースがフレームと重ならないかを確認
 // frame : フレーム番号
 // com_num : 組み合わせ番号
-bool lengthalgorithm::clearCorner(int frame,int com_num)
+void lengthalgorithm::clearCorner(int frame,int com_num)
 {
-    // その並び順が削除されたかを確認
-    bool check = true;
-
     // 左側のピースを確認
     PieceEdge focus = g_cleared_sort[frame][com_num][0];
     procon::ExpandedPolygon Polygon = g_pieces[focus.piece];
@@ -113,9 +124,7 @@ bool lengthalgorithm::clearCorner(int frame,int com_num)
     double deg = Polygon.getSideAngle()[(focus.edge + 1) % Polygon.getSize()] * 180 / M_PI;
     if ((deg_corner - deg) < -1.0)
     {
-        g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-        check = false;
-        return check;
+        return;
     }
 
     // 右側のピースを確認
@@ -126,21 +135,17 @@ bool lengthalgorithm::clearCorner(int frame,int com_num)
     deg = Polygon.getSideAngle()[focus.edge] * 180 / M_PI;
      if ((deg_corner - deg) < -1.0)
     {
-        g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-        check = false;
-        return check;
+        return;
     }
 
-    return check;
+    g_frame_ok.push_back(g_cleared_sort[frame][com_num]);
+    return;
 }
 
 // 隣同士の破片が重なる場合リストから削除
 // com_num : 組み合わせ番号
-bool lengthalgorithm::clearOverlap(int frame,int com_num)
+void lengthalgorithm::clearOverlap(int frame,int com_num)
 {
-    // その並び順が削除されたかを確認
-    bool check=true;
-
     // ピースが隣り合っているところを調べる
     for (int p = 0; p < (int)g_cleared_sort[frame][com_num].size() - 1; p++)
     {
@@ -157,20 +162,16 @@ bool lengthalgorithm::clearOverlap(int frame,int com_num)
         // 破片同士が重なっていたら削除
         if ((180 - deg1 - deg2) < -1.0)
         {
-            g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-            check = false;
-            return check;
+            return;
         }
     }
-    return check;
+
+    g_frame_ok.push_back(g_cleared_sort[frame][com_num]);
+    return;
 }
 
-bool lengthalgorithm::clearEnd(int frame,int com_num)
+void lengthalgorithm::clearEnd(int frame,int com_num)
 {
-
-    // その並び順が削除されたかを確認
-    int check = true;
-
     // 組み合わせの左端のピースに中も注目
     PieceEdge comp_id = g_cleared_sort[frame][com_num][g_cleared_sort[frame][com_num].size() - 1];
     int comp_frame_piece = comp_id.piece;
@@ -189,7 +190,8 @@ bool lengthalgorithm::clearEnd(int frame,int com_num)
 
         if (comp_frame_piece == back_id.piece)
         {
-            return check;
+            g_frame_ok.push_back(g_cleared_sort[frame][com_num]);
+            return;
         }
 
         procon::ExpandedPolygon back_Polygon = g_pieces[back_id.piece];
@@ -197,12 +199,12 @@ bool lengthalgorithm::clearEnd(int frame,int com_num)
         double back_deg = back_Polygon.getSideAngle()[(back_id.edge + 1) % back_Polygon.getSize()] * 180 / M_PI;
         if (deg_frame - comp_deg - back_deg >= -0.1)
         {
-            return check;
+            g_frame_ok.push_back(g_cleared_sort[frame][com_num]);
+            return;
         }
     }
-    g_cleared_sort[frame].erase(g_cleared_sort[frame].begin() + com_num);
-    check = false;
-    return check;
+
+    return;
 }
 
 void lengthalgorithm::test()
@@ -216,7 +218,7 @@ void lengthalgorithm::test()
         g_stacks.push_back(g_frame_stack);
     }
 
-    //g_stacks.erase(g_stacks.begin() + 1);
+    g_stacks.erase(g_stacks.begin() + 1);
 
     // 前に出てきた組み合わせを全パターンに並び替える。
     for (int f=0; f<(int)g_stacks.size(); f++)
@@ -232,55 +234,46 @@ void lengthalgorithm::test()
         g_frame_sort.clear();
     }
 
-    // 並び順が削除されたら同じ番号でfuncを繰り返す
-    int count = 0;
-
     for (int f=0; f<(int)g_cleared_sort.size(); f++)
     {
-        int com_num =(int)g_cleared_sort[f].size();
-        for (int c = 0; c < com_num; c++)
+        for (int c = 0; c < (int)g_cleared_sort[f].size(); c++)
         {
-            bool check = clearCorner(f,count);
-
-            // もし削除されていなかったら次の番号で実行
-            if (check == true) count++;
+            clearCorner(f,c);
         }
-        count = 0;
+        g_cleared_sort[f].clear();
+        g_cleared_sort[f] = g_frame_ok;
+        g_frame_ok.clear();
     }
 
-    printf("OK");
+     printf("OK");
 
     // すべての組み合わせについて調べる
     for (int f=0; f<(int)g_cleared_sort.size(); f++)
     {
-        int com_num =(int)g_cleared_sort[f].size();
-        for (int c = 0; c < com_num; c++)
+        for (int c = 0; c < (int)g_cleared_sort[f].size(); c++)
         {
-            bool check = clearOverlap(f,count);
-
-            // もし削除されていなかったら次の番号で実行
-              if (check == true) count++;
+            clearOverlap(f,c);
         }
-        count = 0;
+        g_cleared_sort[f].clear();
+        g_cleared_sort[f] = g_frame_ok;
+        g_frame_ok.clear();
     }
 
-    printf("OK");
+     printf("OK");
 
     // すべての組み合わせについて調べる
     int frame_num = (int)g_cleared_sort.size();
     for (int f=0; f<(int)frame_num; f++)
     {
-        int com_num =(int)g_cleared_sort[f].size();
-        for (int c = 0; c < com_num; c++)
+        for (int c = 0; c < (int)g_cleared_sort[f].size(); c++)
         {
             if (g_cleared_sort[(f + 1) % frame_num].size() == 0) break;
 
-            bool check = clearEnd(f,count);
-
-            // もし削除されていなかったら次の番号で実行
-            if (check == true) count++;
+            clearEnd(f,c);
         }
-        count = 0;
+        g_cleared_sort[f].clear();
+        g_cleared_sort[f] = g_frame_ok;
+        g_frame_ok.clear();
     }
 
     printf("OK");

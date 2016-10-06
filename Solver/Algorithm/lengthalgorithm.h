@@ -57,6 +57,9 @@ private:
 
     // フレームごとの組み合わせ全てを保存する配列
     std::vector<std::vector<PieceEdge>> g_frame_stack;
+
+    // フレームごとの組み合わせ全てを保存する配列
+    std::vector<std::vector<PieceEdge>> g_frame_ok;
     
     // 組み合わせが全て入る配列
     std::vector<std::vector<std::vector<PieceEdge>>> g_stacks;
@@ -70,11 +73,11 @@ public:
     // フレームごとの並び替えた組み合わせがすべて入る配列
     frame_edge_set_type g_frame_sort;
 
-    bool clearCorner(int frame,int com_num);
+    void clearCorner(int frame,int com_num);
 
-    bool clearOverlap(int frame,int com_num);
+    void clearOverlap(int frame,int com_num);
 
-    bool clearEnd(int frame,int com_num);
+    void clearEnd(int frame,int com_num);
 };
 
 #endif // LENGTHALGORITHM_H
