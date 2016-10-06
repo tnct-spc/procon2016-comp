@@ -2,6 +2,7 @@
 
 #include "utilities.h"
 #include "field.h"
+#include <QEventLoop>
 
 // PIを使うため
 #define _USE_MATH_DEFINES
@@ -10,6 +11,18 @@
 lengthalgorithm::lengthalgorithm()
 {
 
+}
+
+void lengthalgorithm::bomPush(procon::Field& field, int frame_inner_pos, int frame_number, std::vector<PieceEdge> edges)
+{
+    int frame_pos = frame_number;
+    for(auto& edge : edges){
+        procon::ExpandedPolygon new_frame;
+        PolygonConnector::joinEdge(new_frame, field.getFrame(), frame_inner_pos, frame_pos, field.getElementaryPieces().at(edge.piece), edge.edge);
+        field.setFrame(new_frame);
+
+        frame_pos = (new_frame.getPolygon().inners().at(frame_inner_pos).size()-1) - 1;
+    }
 }
 
 void lengthalgorithm::run(procon::Field field)
@@ -25,7 +38,11 @@ void lengthalgorithm::run(procon::Field field)
     {
         // 領域ごとにできるようにする
         g_frame = field.getElementaryFrame();
-        test();
+        procon::Field result_field = test(field);
+        std::cout<<"get result"<<std::endl;
+        submitAnswer(result_field);
+        QEventLoop whileloop;
+        whileloop.exec();
     }
 }
 
@@ -205,7 +222,7 @@ bool lengthalgorithm::clearEnd(int frame,int com_num)
     return check;
 }
 
-void lengthalgorithm::test()
+procon::Field lengthalgorithm::test(procon::Field field)
 {
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
     for (int f=0; f<(int)g_frame.getInnersSideAngle().back().size(); f++)
@@ -284,4 +301,10 @@ void lengthalgorithm::test()
     }
 
     printf("OK");
+
+    procon::Field new_field = field; //omosou
+    int frame_inner_pos = 0;
+    int frame_pos = 0;
+    bomPush(new_field, frame_inner_pos, frame_pos, g_cleared_sort.at(frame_pos).at(0));
+    return new_field;
 }

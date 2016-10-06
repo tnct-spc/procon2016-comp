@@ -15,8 +15,9 @@ public:
 
     void run(procon::Field field);
 
-    void test();
+    procon::Field test(procon::Field field);
 
+private:
     // 当てはまるピースのIDをいれるクラス
     struct PieceEdge
     {
@@ -31,8 +32,6 @@ public:
         int piece;
         int edge;
     };
-
-private:
 
     // sortPiecesで並び替える組み合わせを入れる配列。
     std::vector<PieceEdge> g_sorted_pieces;
@@ -57,11 +56,14 @@ private:
 
     // フレームごとの組み合わせ全てを保存する配列
     std::vector<std::vector<PieceEdge>> g_frame_stack;
-    
+
     // 組み合わせが全て入る配列
     std::vector<std::vector<std::vector<PieceEdge>>> g_stacks;
 
     std::vector<std::vector<std::vector<PieceEdge>>> g_cleared_sort;
+
+    //connect pieces
+    void bomPush(procon::Field& field, int frame_inner_pos, int frame_number, std::vector<PieceEdge> edges);
 
 public:
 
