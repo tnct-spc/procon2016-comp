@@ -8,7 +8,8 @@ testLengthAlgorithm::testLengthAlgorithm()
 
 bool testLengthAlgorithm::run(){
     lengthalgorithm solver;
-    solver.test();
+    procon::Field fake_field;
+    solver.test(fake_field);
     debugprint("OK");
     return true;
 }

@@ -10,6 +10,7 @@ class PolygonConnector
 {
 public:
     static bool joinPolygon(procon::ExpandedPolygon Polygon1, procon::ExpandedPolygon Polygon2, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data);
+    static bool joinEdge(procon::ExpandedPolygon& new_frame, procon::ExpandedPolygon frame, int frame_inner_number, int frame_pos, procon::ExpandedPolygon piece, int polygon_pos);
 private:
     static int increment(int num, int size){return (num + 1) % size;}
     static int decrement(int num, int size){return ((num - 1) % size + size) % size;}

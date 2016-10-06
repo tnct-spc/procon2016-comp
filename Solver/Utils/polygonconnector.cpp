@@ -55,6 +55,133 @@ polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolyg
     return new_raw_polygon;
 }
 
+bool PolygonConnector::joinEdge(procon::ExpandedPolygon &new_frame, procon::ExpandedPolygon frame, int frame_inner_pos, int frame_pos, procon::ExpandedPolygon piece, int piece_pos)
+{
+#ifdef DEBUG_RING
+    auto debugRing = [](Ring ring, int line){
+        std::cout<<std::to_string(line)<<" : ";
+        for (int i=0; i < static_cast<int>(ring.size()); i++) {
+            double x = ring[i].x();
+            double y = ring[i].y();
+            std::cout<<"<"<<x<<","<<y<<">";
+        }
+        std::cout<<std::endl;
+    };
+#endif
+
+    //結合情報
+    //Fit fit1 = join_data[0];
+    //Fit fit2 = join_data[1];
+
+    //それぞれOuterとして持つ
+    Ring ring1 = popRingByPolygon(frame, frame_inner_pos);
+    Ring ring2 = popRingByPolygon(piece, -1);
+    int size1 = ring1.size();
+    int size2 = ring2.size();
+
+#ifdef DEBUG_RING
+    debugRing(ring1,__LINE__);
+    debugRing(ring2,__LINE__);
+#endif
+
+    //結合後に座標が一致する始点及び終点を取得
+    //const int complete_matching_start_pos_1 = fit1.start_dot_or_line == Fit::Dot ? fit1.start_id : fit1.start_id                  ;
+    //const int complete_matching_end_pos_1   = fit1.end_dot_or_line   == Fit::Dot ? fit1.end_id   : increment(fit1.end_id, size1)  ;
+    //const int complete_matching_start_pos_2 = fit2.start_dot_or_line == Fit::Dot ? fit2.start_id : increment(fit2.start_id, size2);
+    //const int complete_matching_end_pos_2   = fit2.end_dot_or_line   == Fit::Dot ? fit2.end_id   : fit2.end_id                    ;
+
+    // 回転　Ring2を回転させる。このとき誤差が生じる。
+    const double x1 = ring1[frame_pos].x() - ring1[increment(frame_pos,size1)].x();
+    const double y1 = ring1[frame_pos].y() - ring1[increment(frame_pos,size1)].y();
+    const double x2 = ring2[increment(piece_pos,size2)].x() - ring2[piece_pos].x();
+    const double y2 = ring2[increment(piece_pos,size2)].y() - ring2[piece_pos].y();
+    const double degree2 = atan2(y2, x2);
+    const double degree1 = atan2(y1, x1);
+    const double rotate_radian = (degree1 - degree2);
+    piece.rotatePolygon(-rotate_radian*(360/(M_PI*2))); //rotate piece
+    ring2 = popRingByPolygon(piece,-1); //update ring2
+
+    //debugRing(ring1,__LINE__);
+    //debugRing(ring2,__LINE__);
+
+    // 移動　結合後に一致する点とその次の点を用いて、ポリゴンのx,y移動を調べ、Polygon2を平行移動
+    const int Join_point1 = frame_pos;
+    const int Join_point2 = increment(piece_pos,size2);
+    const double move_x = ring1[Join_point1].x() - ring2[Join_point2].x();
+    const double move_y = ring1[Join_point1].y() - ring2[Join_point2].y();
+    piece.translatePolygon(move_x, move_y); //translate piece
+    ring2 = popRingByPolygon(piece,-1); //update ring2
+
+    // 重複チェック！
+    //if(hasConflict(ring1, ring2, fit1, fit2)){
+    //    return false;
+    //}
+
+#ifdef DEBUG_RING
+    debugRing(ring1,__LINE__);
+    debugRing(ring2,__LINE__);
+#endif
+
+    // 結合　新しいRingに結合後の外周の角を入れる。
+    // もし、結合端の辺の長さが等しくならない時はRing1,Ring2ともに端の角を入力。
+    // ここで回転の誤差により角が一致しない場合がある。
+    Ring new_ring;
+    int count = frame_pos + 1;
+    int Type = 1;
+
+    double x,y;
+    do{
+        if (Type == 1) {
+            x = ring1[count%size1].x();
+            y = ring1[count%size1].y();
+            if (count % size1 == frame_pos){
+                Type = 2;
+                //if (fit1.start_dot_or_line == Fit::Dot) { //dot_or_lineはどちらのポリゴンでも同じですね…仕様が変だ
+                //    count = complete_matching_start_pos_2 + 1;
+                //} else {
+                //    count = complete_matching_start_pos_2;
+                //}
+                count = piece_pos + 1;
+                //if(fit1.start_dot_or_line == Fit::Line && fit1.is_start_straight == true){
+                    // Line is straight. Skip.
+                //    count++;
+                //}
+            }else{
+                count++;
+            }
+        }
+        if (Type == 2) {
+            x = ring2[count%size2].x();
+            y = ring2[count%size2].y();
+            if (count % size2 == piece_pos) {
+                //if(fit1.end_dot_or_line == Fit::Line && fit1.is_end_straight == true){
+                    // Line is straight. Skip.
+                //    break;
+                //}else{
+                //    Type=-1;
+                //}
+                Type=-1;
+            }else{
+                count++;
+            }
+        }
+        new_ring.push_back(point_t(x,y));
+    } while (Type != -1);
+
+#ifdef DEBUG_RING
+    debugRing(new_ring,__LINE__);
+#endif
+
+    //　ポリゴンにRingを出力しておしまい
+    //TODO
+    polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, frame, frame_inner_pos);
+    frame.setMultiIds(std::vector<int>{frame.getId(), piece.getId()});
+    new_frame = std::move(frame);
+    new_frame.pushNewJointedPolygon(new_raw_polygon, piece);
+
+    return true;
+}
+
 //ポリゴンを合体する関数本体 !!!!!!polygon2 mast piece
 bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data)
 {
