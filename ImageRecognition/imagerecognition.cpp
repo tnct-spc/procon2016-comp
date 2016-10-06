@@ -196,6 +196,49 @@ cv::Mat ImageRecognition::preprocessingFrame(cv::Mat image)
 
 std::vector<cv::Mat> ImageRecognition::preprocessingPieces(cv::Mat image)
 {
+    auto kakutyo = [](cv::Mat input)->cv::Mat{
+
+        auto kurokunuru = [](cv::Vec3b *p)->void{
+            (*p)[0] = 0;
+            (*p)[1] = 0;
+            (*p)[2] = 0;
+        };
+
+        cv::Mat output;
+        output = input.clone();
+
+        for(int y = 1; y < input.rows - 1; y++){
+
+            cv::Vec3b *p = &input.at<cv::Vec3b>(y,1);
+
+            for(int x = 1; x < input.cols - 1; x++){
+
+                if(((*p)[0] == 0) && ((*p)[1] == 0) && ((*p)[2] == 0)){
+
+                    int startx = x - 1;
+                    int starty = y - 1;
+
+                    for(int x = startx; x < startx + 3; x++){
+                        for(int y = starty; y < starty + 3; y++){
+
+                            kurokunuru(&output.at<cv::Vec3b>(y,x));
+
+                        }
+                    }
+
+                    //std::cout << "shine" << std::endl;
+                }
+                //std::cout << "yah" << std::endl;
+                p++;
+
+            }
+        }
+
+        return output;
+
+    };
+
+
     threshold(image);
     int rows = image.rows;
     int cols = image.cols;
