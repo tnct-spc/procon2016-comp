@@ -23,7 +23,7 @@ void BeamSearch::initialization()
 #else
     beam_width = 100;
 #endif
-    variety_width = 50;
+    variety_width = 20;
 }
 
 void BeamSearch::evaluateNextMove (std::vector<Evaluation> & evaluations,std::vector<procon::Field> const& field_vec)
@@ -158,7 +158,7 @@ std::vector<procon::Field> BeamSearch::makeNextField (std::vector<Evaluation> co
 
         std::vector<int> random_vec = std::move(makeRandomVector((i - 1) * beam_width,limit));
         int falut = 0;
-        while (static_cast<int>(next_field_vec.size()) < beam_width + variety_width && falut + variety_width < limit) {
+        while (static_cast<int>(next_field_vec.size()) < beam_width + variety_width && falut + variety_width < (limit - ( (i - 1) * beam_width) )) {
             std::vector<std::thread> threads;
             for (int i = 0;i < variety_width;i++) {
                 std::thread thread(makeField,random_vec.at(i + falut),random_vec.at(i + falut) + 1);
@@ -242,11 +242,17 @@ void BeamSearch::run(procon::Field field)
         this->evaluateNextMove(evaluations,field_vec);
         this->evaluateHistoryInit(field_vec);
         for(Evaluation & evaluation: evaluations) {
+            std::cout << "alpha" << std::endl;
             evaluation.evaluation += alpha * this->evaluateUniqueAngle(evaluation,field_vec);
+            std::cout << "beta" << std::endl;
             evaluation.evaluation += beta * this->evaluateUniqueLength(evaluation,field_vec);
+            std::cout << "gamma" << std::endl;
             evaluation.evaluation += gamma * this->evaluateHistory(evaluation,field_vec);
+            std::cout << "delta" << std::endl;
+            evaluation.evaluation += delta * this->evaluateFrame(evaluation,field_vec);
         }
 
+        std::cout << "clear" << std::endl;
         if (evaluations.empty()){
             submitAnswer(buckup_field);
             return;
