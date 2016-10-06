@@ -66,6 +66,8 @@ private:
 
     std::vector<std::vector<std::vector<PieceEdge>>> g_cleared_sort;
 
+    std::vector<bool> inverse_check;
+
 public:
 
     void sortPieces(int watched_list);

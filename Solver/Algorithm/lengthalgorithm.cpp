@@ -15,16 +15,16 @@ lengthalgorithm::lengthalgorithm()
 void lengthalgorithm::run(procon::Field field)
 {
     // ピースとフレームを配列に入れる
+    // (int)field.getElementaryPieces().size()
     for (int p=0; p<(int)field.getElementaryPieces().size(); p++)
     {
         g_pieces.push_back(field.getElementaryPieces().at(p));
     }
 
-    /*for (int p=0; p<5; p++)
+    for (int r=0; r<(int)field.getElementaryPieces().size(); r++)
     {
-        g_pieces.push_back(field.getElementaryInversePieces().at(p));
-    }*/
-
+        g_pieces.push_back(field.getElementaryInversePieces().at(r));
+    }
 
     field.setFrame(field.getElementaryFrame());
     for (int a=0; a<field.getElementaryFrame().getSize(); a++)
@@ -42,41 +42,51 @@ void lengthalgorithm::searchPairSide(double remaining_length, int watched_piece)
     // フレーム辺の長さに破片がぴったり合ったら表示して、再帰から抜ける。
     if (fabs(remaining_length) < 0.1)
     {
-        // 破片とその辺の組み合わせを保存
-        g_frame_stack.push_back(g_comb);
+        if ((int)g_comb.size() <= 5)
+        {
+            // 破片とその辺の組み合わせを保存
+            g_frame_stack.push_back(g_comb);
+        }
         return;
     }
 
     // すべての破片の組み合わせを試してたら再帰から抜ける。
-    if ((int)g_pieces.size() / 2 <= watched_piece)
+    if ((int)g_pieces.size() <= watched_piece)
     {
         return;
     }
 
     // 破片の各辺を入れて再帰する
-    procon::ExpandedPolygon piece;
-    piece = g_pieces[watched_piece];
+    procon::ExpandedPolygon& piece = g_pieces[watched_piece];
     piece.updatePolygon();
 
+    bool check = true;
+    if ((watched_piece > (int)g_pieces.size() / 2) && (inverse_check[watched_piece - (int)g_pieces.size() / 2 + 1] == false)) check = false;
+
     // 配列からExpolygonを一つ取り出す
-    for (int e = 0; e < piece.getSize(); e++)
+    if (check == true)
     {
-        // フレーム辺の残りの長さより破片の辺が短ければ入れてみる。
-        double l = piece.getSideLength()[e];
-        if (l <= remaining_length)
+        inverse_check[piece.getId()] = false;
+        for (int e = 0; e < piece.getSize(); e++)
         {
-            // この破片と辺をスタックに積む
-            g_comb.push_back(PieceEdge(piece.getId(), e));
+            // フレーム辺の残りの長さより破片の辺が短ければ入れてみる。
+            double l = piece.getSideLength()[e];
+            if (l <= remaining_length)
+            {
+                // この破片と辺をスタックに積む
+                g_comb.push_back(PieceEdge(piece.getId(), e));
 
-            // 次の破片へ再帰
-            searchPairSide(remaining_length - l, watched_piece + 1);
+                // 次の破片へ再帰
+                searchPairSide(remaining_length - l, watched_piece + 1);
 
-            // スタックから取り除く。
-            g_comb.pop_back();
+                // スタックから取り除く。
+                g_comb.pop_back();
+            }
         }
     }
 
     // この破片は入れずに、次の破片へ再帰する。
+    inverse_check[piece.getId()] = true;
     searchPairSide(remaining_length, watched_piece + 1);
 }
 
@@ -87,9 +97,9 @@ void lengthalgorithm::sortPieces(int focus)
     int stack_size = (int)g_sorted_pieces.size();
 
     // もし、最後まで調べ終わったら戻る
-    if (stack_size <= focus)
+    if (stack_size == focus)
     {
-        this->g_frame_sort.push_back(g_sorted_pieces);
+         this->g_frame_sort.push_back(g_sorted_pieces);
         return;
     }
 
@@ -101,14 +111,6 @@ void lengthalgorithm::sortPieces(int focus)
         std::swap(g_sorted_pieces[focus], g_sorted_pieces[i]);
     }
 }
-
-/*void lengthalgorithm::addInversePieces(int frame, int com_num)
-{
-    for (int p=0; p<(int)g_cleared_sort[f][com_num].size(); p++)
-    {
-
-    }
-}*/
 
 // 端のピースがフレームと重ならないかを確認
 // frame : フレーム番号
@@ -212,10 +214,18 @@ void lengthalgorithm::test()
     // フレームの長さぴったりのピースと辺の組み合わせを探す。
     for (int f=0; f<(int)g_frame.getInnersSideAngle().back().size(); f++)
     {
+        for (int p=0; p<(int)g_pieces.size(); p++)
+        {
+            inverse_check.push_back(true);
+        }
         double frame_length = g_frame.getInnersSideLength().back()[f];
-        g_frame_stack.clear();
+        if (frame_length < 15)
+        {
+            searchPairSide(frame_length,0);
+        }
         searchPairSide(frame_length,0);
         g_stacks.push_back(g_frame_stack);
+        g_frame_stack.clear();
     }
 
     g_stacks.erase(g_stacks.begin() + 1);
