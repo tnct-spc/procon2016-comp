@@ -235,6 +235,7 @@ void BeamSearch::run(procon::Field field)
     {
         return a.evaluation > b.evaluation;
     };
+    //init
     calcAngleFrequency(field);
     calcLengthFrequency(field);
     //calcAngleExist(field);
@@ -249,6 +250,19 @@ void BeamSearch::run(procon::Field field)
     //このiは添字として使ってるわけではない（ただの回数ルーブ）
     for (int i = 0;i < static_cast<int>(field.getElementaryPieces().size());i++) {
         evaluations.clear();
+        /*
+        const double state = (i / field.getElementaryPieces().size());
+        const double alpha_state = (1 - state);
+        const double beta_state = (1 - state);
+        const double gamma_state = (state);
+        const double delta_state = (1 - state);
+        */
+        /*
+        const double alpha_state = 1;
+        const double beta_state = 1;
+        const double gamma_state = 1;
+        const double delta_state = 1;
+        */
 
         //最小角計算(後のpruningで使用)
         for (int j = 0;j < static_cast<int>(field_vec.size());j++) {
@@ -267,13 +281,13 @@ void BeamSearch::run(procon::Field field)
             evaluation.evaluation_frame = delta * this->evaluateFrame(evaluation,field_vec);
 #endif
             //std::cout << "alpha" << std::endl;
-            if(!alpha_is_none) evaluation.evaluation += alpha * this->evaluateUniqueAngle(evaluation,field_vec);
+            if(!alpha_is_none) evaluation.evaluation += alpha * this->evaluateUniqueAngle(evaluation,field_vec) * alpha_state;
             //std::cout << "beta" << std::endl;
-            if(!beta_is_none) evaluation.evaluation += beta * this->evaluateUniqueLength(evaluation,field_vec);
+            if(!beta_is_none) evaluation.evaluation += beta * this->evaluateUniqueLength(evaluation,field_vec) * beta_state;
             //std::cout << "gamma" << std::endl;
-            if(!gamma_is_none) evaluation.evaluation += gamma * this->evaluateHistory(evaluation,field_vec);
+            if(!gamma_is_none) evaluation.evaluation += gamma * this->evaluateHistory(evaluation,field_vec) * gamma_state;
             //std::cout << "delta" << std::endl;
-            if(!delta_is_none) evaluation.evaluation += delta * this->evaluateFrame(evaluation,field_vec);
+            if(!delta_is_none) evaluation.evaluation += delta * this->evaluateFrame(evaluation,field_vec) * delta_state;
         }
         if (evaluations.empty()){
             submitAnswer(buckup_field);
