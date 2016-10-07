@@ -28,10 +28,10 @@ public:
     bool gamma_is_none = false;
     bool delta_is_none = false;
 
-    double alpha = 1;
-    double beta = 1;
+    double alpha = 0.5;
+    double beta = 0;
     double gamma = 4;
-    double delta = 1;
+    double delta = 2;
 };
 
 

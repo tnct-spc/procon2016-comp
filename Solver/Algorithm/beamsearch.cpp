@@ -250,17 +250,18 @@ void BeamSearch::run(procon::Field field)
     //このiは添字として使ってるわけではない（ただの回数ルーブ）
     for (int i = 0;i < static_cast<int>(field.getElementaryPieces().size());i++) {
         evaluations.clear();
-        const double state = (static_cast<double>(i) / field.getElementaryPieces().size());
-        const double alpha_state = (1 - state);
-        const double beta_state = (1 - state);
-        const double gamma_state = 1;
-        const double delta_state = (state);
         /*
+        const double state = (static_cast<double>(i) / field.getElementaryPieces().size());
+        const double alpha_state = 1;
+        const double beta_state = 1;
+        const double gamma_state = (state);
+        const double delta_state = (1 - state);
+        */
+
         const double alpha_state = 1;
         const double beta_state = 1;
         const double gamma_state = 1;
         const double delta_state = 1;
-        */
 
         //最小角計算(後のpruningで使用)
         for (int j = 0;j < static_cast<int>(field_vec.size());j++) {
