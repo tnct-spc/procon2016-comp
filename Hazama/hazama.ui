@@ -359,8 +359,8 @@
    <widget class="QWidget" name="verticalLayoutWidget_3">
     <property name="geometry">
      <rect>
-      <x>850</x>
-      <y>20</y>
+      <x>870</x>
+      <y>30</y>
       <width>351</width>
       <height>71</height>
      </rect>
@@ -373,6 +373,13 @@
        </property>
        <property name="checked">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="kakutyouflag">
+       <property name="text">
+        <string>kakutyou flag</string>
        </property>
       </widget>
      </item>
@@ -477,7 +484,7 @@
      <x>0</x>
      <y>0</y>
      <width>1230</width>
-     <height>27</height>
+     <height>17</height>
     </rect>
    </property>
   </widget>

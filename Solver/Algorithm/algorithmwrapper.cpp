@@ -31,7 +31,7 @@ void AlgorithmWrapper::run(procon::Field field)
 
 void AlgorithmWrapper::calcAngleFrequency(procon::Field field)
 {
-    angle_frequency.resize(360 / angle_resolution);
+    angle_frequency.resize(300 / angle_resolution);
     constexpr double to_deg = 180 / 3.1415926535;
     auto pieces = field.getElementaryPieces();
     for (auto piece : pieces) {

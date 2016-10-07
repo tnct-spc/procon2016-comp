@@ -217,7 +217,7 @@ void Hazama::run()
         }
 
         /*Image Recognition*/
-        PDATA = imrec.run(raw_frame, raw_pieces);
+        PDATA = imrec.run(raw_frame, raw_pieces,ui->kakutyouflag->isChecked());
 
         //display recognized image
         AnswerBoard::setRawPicture(imrec.getRawPiecesPic(), imrec.getRawPiecesPos());

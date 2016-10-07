@@ -10,7 +10,7 @@ class IMAGERECOGNITIONSHARED_EXPORT ImageRecognition
 {
 
 public:
-    procon::Field run(cv::Mat raw_frame_image, cv::Mat raw_pieces_image);
+    procon::Field run(cv::Mat raw_frame_image, cv::Mat raw_pieces_image, bool kakutyouflag);
 
     const cv::Mat& getRawPiecesPic(){
         return raw_colored_pic;

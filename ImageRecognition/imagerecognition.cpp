@@ -2,8 +2,9 @@
 #include "threshold.h"
 #include "polygonviewer.h"
 #include "utilities.h"
+#include <opencv2/highgui/highgui.hpp>
 
-procon::Field ImageRecognition::run(cv::Mat raw_frame_image, cv::Mat raw_pieces_image)
+procon::Field ImageRecognition::run(cv::Mat raw_frame_image, cv::Mat raw_pieces_image,bool kakutyouflag)
 {
 
     auto kakutyo = [](cv::Mat input)->cv::Mat{
@@ -19,7 +20,7 @@ procon::Field ImageRecognition::run(cv::Mat raw_frame_image, cv::Mat raw_pieces_
 
         for(int y = 1; y < input.rows - 1; y++){
 
-            cv::Vec3b *p = &input.at<cv::Vec3b>(y,1);
+            cv::Vec3b *p = &input.at<cv::Vec3b>(1,y);
 
             for(int x = 1; x < input.cols - 1; x++){
 
@@ -28,10 +29,10 @@ procon::Field ImageRecognition::run(cv::Mat raw_frame_image, cv::Mat raw_pieces_
                     int startx = x - 1;
                     int starty = y - 1;
 
-                    for(int x = startx; x < startx + 3; x++){
-                        for(int y = starty; y < starty + 3; y++){
+                    for(int x = startx; x < startx + 2; x++){
+                        for(int y = starty; y < starty + 2; y++){
 
-                            kurokunuru(&output.at<cv::Vec3b>(y,x));
+                            kurokunuru(&output.at<cv::Vec3b>(x,y));
 
                         }
                     }
@@ -55,9 +56,21 @@ procon::Field ImageRecognition::run(cv::Mat raw_frame_image, cv::Mat raw_pieces_
     cv::Mat frame_image = preprocessingFrame(raw_frame_image);
     std::vector<cv::Mat> pieces_images = preprocessingPieces(raw_pieces_image);
     std::vector<cv::Mat> images;
-    images.push_back(frame_image);
 
-    for(cv::Mat& piece : pieces_images) images.push_back(kakutyo(piece));
+    if(kakutyouflag){
+
+        images.push_back(kakutyo(frame_image));
+        for(cv::Mat& piece : pieces_images) images.push_back(kakutyo(piece));
+
+    }else{
+
+        images.push_back(frame_image);
+        for(cv::Mat& piece : pieces_images) images.push_back(piece);
+
+    }
+
+    //cv::namedWindow("flame",cv::WINDOW_AUTOSIZE);
+    //cv::imshow("flame",images.at(0));
 
     //
     //cv::imshow("before",images.at(1));
@@ -278,7 +291,7 @@ std::vector<cv::Mat> ImageRecognition::preprocessingPieces(cv::Mat image)
 
         for(int y = 1; y < input.rows - 1; y++){
 
-            cv::Vec3b *p = &input.at<cv::Vec3b>(y,1);
+            cv::Vec3b *p = &input.at<cv::Vec3b>(y,2);
 
             for(int x = 1; x < input.cols - 1; x++){
 
