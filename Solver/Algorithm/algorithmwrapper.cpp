@@ -257,7 +257,8 @@ double AlgorithmWrapper::evaluateHistory(Evaluation const& evaluation,std::vecto
 
 double AlgorithmWrapper::evaluateFrame(Evaluation const& evaluation,std::vector<procon::Field> const& field_vec)
 {
-    constexpr double to_deg = 180 / 3.141592653589;
+    constexpr double pi = 3.141592653589;
+    constexpr double to_deg = 180 / pi;
     std::vector<double> ave;
     procon::Field const& field = field_vec.at(evaluation.vector_id);
 
@@ -278,7 +279,7 @@ double AlgorithmWrapper::evaluateFrame(Evaluation const& evaluation,std::vector<
         for (auto angle : angles) {
             //ここでreleaseだと落ちる
             //犯人は多分いしょた
-            ave.emplace_back(angle_frequency.at(static_cast<int>((angle / angle_resolution) * to_deg)));
+            ave.emplace_back(angle_frequency.at(static_cast<int>(((2 * pi - angle) / angle_resolution) * to_deg)));
         }
     }
     return 1 - (std::accumulate(ave.begin(),ave.end(),0.0) / ave.size());
