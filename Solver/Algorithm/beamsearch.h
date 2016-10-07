@@ -24,7 +24,7 @@ public:
     void run(procon::Field field);
 
     bool alpha_is_none = false;
-    bool beta_is_none = false;
+    bool beta_is_none = true;
     bool gamma_is_none = false;
     bool delta_is_none = false;
 

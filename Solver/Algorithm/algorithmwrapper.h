@@ -26,8 +26,8 @@ public:
     //angle-Frequency
     static constexpr int angle_resolution = 5;
     //liner
-    static constexpr double angle_ideal_min = 0.1;
-    static constexpr double angle_ideal_max = 1.5;
+    static constexpr double ideal_min = 0.0;
+    static constexpr double ideal_max = 1.0;
     //exponential
     static constexpr double angle_alpha = 1;
     static constexpr double angle_beta = 0;

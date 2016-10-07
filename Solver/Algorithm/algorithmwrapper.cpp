@@ -73,10 +73,10 @@ void AlgorithmWrapper::calcAngleFrequency(procon::Field field)
         double real_min = *(std::min_element(angle_frequency.begin(),angle_frequency.end()));
         auto linerFunction = [&](double x)->double
         {
-            return ((angle_ideal_max - angle_ideal_min) / (real_min - real_max)) * (x - real_max) + angle_ideal_min;
+            return ((ideal_max - ideal_min) / (real_min - real_max)) * (x - real_max) + ideal_min;
         };
-        //angle = linerFunction(angle);
-        angle = exponentialFunction(angle);
+        angle = linerFunction(angle);
+        //angle = exponentialFunction(angle);
     }
     for (auto & angles : angle_frequency_kai) {
         for (auto & angle : angles) {
@@ -125,13 +125,21 @@ void AlgorithmWrapper::calcLengthFrequency(procon::Field field)
     }
     for (auto &length : length_frequency) {
         if (length == 0) length = 1;
+    }
+    for (auto &length : length_frequency) {
         auto exponentialFunction = [&](double x)->double
         {
             return std::pow(length_base,-length_alpha * x) + length_beta;
         };
-        length = exponentialFunction(length);
+        double real_max = *(std::max_element(length_frequency.begin(),length_frequency.end()));
+        double real_min = *(std::min_element(length_frequency.begin(),length_frequency.end()));
+        auto linerFunction = [&](double x)->double
+        {
+            return ((ideal_max - ideal_min) / (real_min - real_max)) * (x - real_max) + ideal_min;
+        };
+        length = linerFunction(length);
+        //length = exponentialFunction(length);
     }
-    true;
 }
 
 std::vector<Evaluation> AlgorithmWrapper::evaluateCombinationByAngle(procon::ExpandedPolygon const& frame, procon::ExpandedPolygon const& piece)
