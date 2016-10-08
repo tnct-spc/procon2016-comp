@@ -18,7 +18,7 @@ public:
     std::vector<double> angle_frequency;
     std::vector<std::vector<double>> angle_frequency_kai;
     std::vector<double> length_frequency;
-
+    std::vector<std::vector<std::pair<int,std::array<Fit,2>>>> matching_pieces;
     //pruning
     static constexpr double exist_resolution = 1;
     std::array<bool,(int)(360 / exist_resolution) + 1> angle_exist;
@@ -56,6 +56,8 @@ public:
     void calcAngleExist(procon::Field field);
     void calcLengthFrequency(procon::Field field);
     void submitAnswer(procon::Field field);
+
+    void calcMatchingPieces(procon::Field const& field);
 
     Fit fit1,fit2;
     std::vector<Evaluation> evaluateCombinationByAngle(procon::ExpandedPolygon const& frame, procon::ExpandedPolygon const& piece);

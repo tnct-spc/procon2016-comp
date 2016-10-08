@@ -88,6 +88,26 @@ void AlgorithmWrapper::calcAngleFrequency(procon::Field field)
     }
 }
 
+void AlgorithmWrapper::calcMatchingPieces(procon::Field const& field) {
+    auto const& pieces = field.getElementaryPieces();
+    matching_pieces.resize(pieces.size());
+    for (int i = 0;i < pieces.size(); i++) {
+        matching_pieces.at(i).resize(pieces.size());
+        for (int j = 0;j < pieces.size(); j++) {
+            std::vector<std::array<Fit,2>> fits;
+            std::vector<int> eva = SearchSameLength::evaluateMatching(pieces.at(i),pieces.at(j),fits);
+            if (eva.size() != 0) {
+                auto max_it = (std::max_element(eva.begin(),eva.end()));
+                std::array<Fit,2> max_fit = fits.at(static_cast<int>(max_it - eva.begin()));
+                auto max_eva = *max_it;
+                std::pair<int,std::array<Fit,2>> p = std::make_pair(max_eva,max_fit);
+                matching_pieces.at(i).at(j) = std::move(p);
+            }
+        }
+    }
+    [](){}();
+}
+
 void AlgorithmWrapper::calcAngleExist(procon::Field field)
 {
     for (auto & angle : angle_exist) angle = false;
