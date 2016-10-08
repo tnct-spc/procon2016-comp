@@ -224,11 +224,11 @@ void Hazama::run()
             procon::ExpandedPolygon result;
 
             polygon_t sample11;
-            sample11.outer().push_back(point_t(0.0000000025353,0.0000000532));
-            sample11.outer().push_back(point_t(0.0000000003153264,30.000000000032535));
-            sample11.outer().push_back(point_t(30.0000000011613,30.00000000061634));
-            sample11.outer().push_back(point_t(30.0000000006134,0.00000000013445));
-            sample11.outer().push_back(point_t(0.0000000025353,0.0000000532));
+            sample11.outer().push_back(point_t(0.00000063140025353,0.0000000531532));
+            sample11.outer().push_back(point_t(0.000000012434003153264,30.00000053234000032535));
+            sample11.outer().push_back(point_t(30.0000002340011613,30.000000012430061634));
+            sample11.outer().push_back(point_t(30.00000012430006134,0.000000134300013445));
+            sample11.outer().push_back(point_t(0.00000063140025353,0.0000000531532));
 /*
             sample11.inners().push_back(polygon_t::ring_type());
             sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
@@ -247,13 +247,12 @@ void Hazama::run()
             sample11.inners().at(0).push_back(point_t(2.00000000011353,2.00000013535));
             */
             sample11.inners().push_back(polygon_t::ring_type());
-            sample11.inners().at(0).push_back(point_t(2.0000000624,28.00000023));
-            sample11.inners().at(0).push_back(point_t(19.0000000012,28.00000000724));
-            sample11.inners().at(0).push_back(point_t(28.00000000015,23.000000000515));
-            sample11.inners().at(0).push_back(point_t(28.000000000000523,17.000000030012));
-            sample11.inners().at(0).push_back(point_t(2.000000135,17.0000000000153));
-            sample11.inners().at(0).push_back(point_t(2.00000000000512,17.000000000007654));
-            sample11.inners().at(0).push_back(point_t(2.0000000624,28.00000023));
+            sample11.inners().at(0).push_back(point_t(2.0000000624,28.00000043223));
+            sample11.inners().at(0).push_back(point_t(19.000000024012,28.0000000320724));
+            sample11.inners().at(0).push_back(point_t(28.000000014230015,23.000000024100515));
+            sample11.inners().at(0).push_back(point_t(28.0000000001432000523,17.00000003230012));
+            sample11.inners().at(0).push_back(point_t(2.000000142135,17.000000001423100153));
+            sample11.inners().at(0).push_back(point_t(2.0000000624,28.00000043223));
 
             polygon_t piece1;
             piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
