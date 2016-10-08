@@ -162,6 +162,9 @@
     <layout class="QGridLayout" name="gridLayout">
      <item row="2" column="4">
       <widget class="QPushButton" name="pushButton_3">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>PushButton</string>
        </property>
@@ -169,6 +172,9 @@
      </item>
      <item row="3" column="1">
       <widget class="QSlider" name="horizontalSlider_4">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -176,6 +182,9 @@
      </item>
      <item row="3" column="4">
       <widget class="QPushButton" name="pushButton_4">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>PushButton</string>
        </property>
@@ -190,6 +199,9 @@
      </item>
      <item row="0" column="1">
       <widget class="QSlider" name="horizontalSlider_1">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -213,6 +225,9 @@
      </item>
      <item row="1" column="4">
       <widget class="QPushButton" name="pushButton_2">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>PushButton</string>
        </property>
@@ -237,6 +252,9 @@
      </item>
      <item row="1" column="1">
       <widget class="QSlider" name="horizontalSlider_2">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -244,6 +262,9 @@
      </item>
      <item row="0" column="4">
       <widget class="QPushButton" name="pushButton_1">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>PushButton</string>
        </property>
@@ -251,6 +272,9 @@
      </item>
      <item row="2" column="1">
       <widget class="QSlider" name="horizontalSlider_3">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -348,6 +372,9 @@
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
       <widget class="QPushButton" name="LoadConfig">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>LoadConfig</string>
        </property>
@@ -355,6 +382,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="WriteConfig">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>WriteConfig</string>
        </property>
@@ -374,6 +404,9 @@
     <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
       <widget class="QCheckBox" name="isKeepBestAnswerMode">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="text">
         <string>KeepBestAnswerMode</string>
        </property>
@@ -483,7 +516,7 @@
      <x>0</x>
      <y>0</y>
      <width>1230</width>
-     <height>27</height>
+     <height>17</height>
     </rect>
    </property>
   </widget>
