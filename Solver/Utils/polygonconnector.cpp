@@ -332,7 +332,7 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
 
     // 重複チェック！
     if(hasConflict(ring1, ring2, fit1, fit2)){
-        //return false;
+        return false;
     }
 
     //　ポリゴンにRingを出力しておしまい
@@ -1207,7 +1207,7 @@ std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vecto
     };
 
 
-    constexpr double gosaaaaaaaaaaaaaaaa = 0.1;
+    constexpr double gosaaaaaaaaaaaaaaaa = 0.3;
 
     /*
     for(unsigned int i = 0; i < field.getFrame().getPolygon().inners().size(); i++){
