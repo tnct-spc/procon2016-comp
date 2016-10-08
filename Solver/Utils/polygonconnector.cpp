@@ -69,7 +69,7 @@ polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolyg
 }
 
 //ポリゴンを合体する関数本体 !!!!!!polygon2 mast piece
-bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& updated_frame, std::array<Fit,2> join_data)
+bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::ExpandedPolygon piece, procon::ExpandedPolygon& updated_frame, std::array<Fit,2> join_data)
 {
 #ifdef DEBUG_RING
     auto debugRing = [](Ring ring, int line){
@@ -83,17 +83,14 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     };
 #endif
 
-    bool first_attach_push_new_frame = true;
-    updated_frame = jointed_polygon;
-    // join piece into updated Frame
-    updated_frame.pushNewJointedPolygon(piece);
+    updated_frame = frame;
 
     //結合情報
     Fit fit1 = join_data[0];
     Fit fit2 = join_data[1];
 
     //それぞれOuterとして持つ
-    Ring ring1 = popRingByPolygon(jointed_polygon, jointed_polygon.getInnerSize() == 0 ? -1 : fit1.frame_inner_pos);
+    Ring ring1 = popRingByPolygon(frame, fit1.frame_inner_pos);
     Ring ring2 = popRingByPolygon(piece, -1);
     int size1 = ring1.size();
     int size2 = ring2.size();
@@ -235,9 +232,11 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
         }
 
     };
-    Ring covered_ring = new_ring;
-    covered_ring.push_back(new_ring.front());
-    divideFrameRing(covered_ring);
+
+    Ring covered_new_ring = new_ring;
+    covered_new_ring.push_back(new_ring.front());
+
+    divideFrameRing(covered_new_ring);
 
     // 重複チェック！
     //if(hasConflict(ring1, ring2, fit1, fit2)){
@@ -245,19 +244,20 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     //}
 
     //　ポリゴンにRingを出力しておしまい
+
+    // join piece into updated Frame
+    updated_frame.pushNewJointedPolygon(piece);
+
+    bool first_attach_push_new_frame = true;
     for(auto& divided_frame_ring : dividedFrameRings){
-        if(jointed_polygon.getInnerSize() != 0){ //frame-piece
-            //add new_ring to updatedFrame
-            if(first_attach_push_new_frame){
-                first_attach_push_new_frame = false;
-                polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, fit1.frame_inner_pos);
-                updated_frame.resetPolygonForce(new_raw_frame_polygon);
-            }else{
-                polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, 0,true);
-                updated_frame.resetPolygonForce(new_raw_frame_polygon);
-            }
-        }else{ //piece-piece
-            throw "Not supported!";
+        //add new_ring to updatedFrame
+        if(first_attach_push_new_frame){
+            first_attach_push_new_frame = false;
+            polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, fit1.frame_inner_pos,false);
+            updated_frame.resetPolygonForce(new_raw_frame_polygon);
+        }else{
+            polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, 0,true);
+            updated_frame.resetPolygonForce(new_raw_frame_polygon);
         }
     }
 
