@@ -221,6 +221,7 @@ void Hazama::run()
             procon::ExpandedPolygon Eframe(0);
             procon::ExpandedPolygon Epiece1(1);
             procon::ExpandedPolygon Epiece2(2);
+            procon::ExpandedPolygon Epiece0(3);
             procon::ExpandedPolygon result;
 
             polygon_t sample11;
@@ -234,7 +235,7 @@ void Hazama::run()
             sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
             sample11.inners().at(0).push_back(point_t(28.000000012012432100051354,2.00000014331535));
             sample11.inners().at(0).push_back(point_t(28.00000001344,13.0000000143201643));
-            sample11.inners().at(0).push_back(point_t(15.00000001344,8.0000000143201643));
+            //sample11.inners().at(0).push_back(point_t(15.00000001344,8.0000000143201643));
             sample11.inners().at(0).push_back(point_t(2.0000001423003154,13.00000241300143));
             sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
 
@@ -262,15 +263,16 @@ void Hazama::run()
             piece1.outer().push_back(point_t(15.00000000000531,2.0000000000123534));
             piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
 */
-/*yama
-            piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
-            piece1.outer().push_back(point_t(8.500000000000531,13.0000000000123534));
-            piece1.outer().push_back(point_t(15.0000000001734,7.500000000003250134));
-            piece1.outer().push_back(point_t(21.5000000000132634,13.00000000000530134));
-            piece1.outer().push_back(point_t(28.000000000133234,2.0000000000035134));
-            piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
-            */
+            //yama
+            polygon_t piece0;
+            piece0.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
+            piece0.outer().push_back(point_t(8.500000000000531,13.0000000000123534));
+            piece0.outer().push_back(point_t(15.0000000001734,7.500000000003250134));
+            piece0.outer().push_back(point_t(21.5000000000132634,13.00000000000530134));
+            piece0.outer().push_back(point_t(28.000000000133234,2.0000000000035134));
+            piece0.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
 
+/*
             polygon_t piece1;
             piece1.outer().push_back(point_t(2.0000000000006135,2.0000000000134));
             piece1.outer().push_back(point_t(15.00000000001334,8.000000000000134));
@@ -281,14 +283,15 @@ void Hazama::run()
             piece2.outer().push_back(point_t(15.0000000243,28.00000013214));
             piece2.outer().push_back(point_t(28.000000513243,17.0000000153));
             piece2.outer().push_back(point_t(2.000000001352,17.0000001430061534));
-
+*/
 
             Eframe.resetPolygonForce(sample11);
-            Epiece1.resetPolygonForce(piece1);
-            Epiece2.resetPolygonForce(piece2);
+            //Epiece1.resetPolygonForce(piece1);
+            //Epiece2.resetPolygonForce(piece2);
+            Epiece0.resetPolygonForce(piece0);
 
             PDATA.setElementaryFrame(Eframe);
-            PDATA.setElementaryPieces(std::vector<procon::ExpandedPolygon>{Epiece1,Epiece2});
+            PDATA.setElementaryPieces(std::vector<procon::ExpandedPolygon>{/*Epiece1,Epiece2,*/Epiece0});
 
         }
 

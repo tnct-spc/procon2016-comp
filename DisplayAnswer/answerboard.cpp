@@ -106,6 +106,7 @@ void AnswerBoard::paintEvent(QPaintEvent *)
         int inners_num = polygon.inners().size();
 
         for(int inner = 0; inner < inners_num; inner++){
+            painter.setBrush(QBrush(QColor(rand()%255,rand()%255,rand()%255)));
 
             int dot_num = polygon.inners().at(inner).size();
             QPointF* draw_point = new QPointF[dot_num];
@@ -114,8 +115,21 @@ void AnswerBoard::paintEvent(QPaintEvent *)
                 draw_point[dot] = getPosition(QPointF(polygon.inners().at(inner).at(dot).x()/frame_size,polygon.inners().at(inner).at(dot).y()/frame_size),isLeftOrRight);
             }
             painter.drawPolygon(draw_point,dot_num);
+
             delete[] draw_point;
         }
+    };
+
+    auto drawPolygonInnersS = [&](polygon_t polygon,Space isLeftOrRight){
+        int inners_num = polygon.inners().size();
+
+            //draw piece id
+            painter.setPen(QPen(QColor("#00ff55")));
+            QFont font = painter.font();
+            font.setPointSize(std::abs(getScale()/3));
+            painter.setFont(font);
+            painter.drawText(getPosition(QPointF(0.5,0.5),Space::LEFT), QString::number(inners_num));
+
     };
 
     const QString color_background = SINGLE_MODE? "#E5E6DB":"#d4c91f";
@@ -240,6 +254,10 @@ void AnswerBoard::paintEvent(QPaintEvent *)
             cnt++;
         }
         */
+
+        //draw frame inners
+        painter.setBrush(QBrush(QColor(color_inner)));
+        drawPolygonInnersS(field->getFrame().getPolygon(),Space::LEFT);
 
     }
 

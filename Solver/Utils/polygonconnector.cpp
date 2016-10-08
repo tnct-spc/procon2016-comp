@@ -192,7 +192,6 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
     // ここで回転の誤差により角が一致しない場合がある。
     Ring new_ring;
     int count = complete_matching_end_pos_1 + 1;
-    int Type = 1;
     double x,y;
 
     // Frame Area
@@ -312,9 +311,9 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
             new_right_ring.push_back(new_ring.at(end_id));
 
             dividedFrameRings.push_back(new_left_ring);
-            dividedFrameRings.push_back(new_right_ring);
-
             divideFrameRing(new_left_ring);
+
+            dividedFrameRings.push_back(new_right_ring);
             divideFrameRing(new_right_ring);
 
         }else{
@@ -335,9 +334,6 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
 
     //　ポリゴンにRingを出力しておしまい
 
-    // join piece into updated Frame
-    updated_frame.pushNewJointedPolygon(piece);
-
     bool first_attach_push_new_frame = true;
     for(auto& divided_frame_ring : dividedFrameRings){
         //add new_ring to updatedFrame
@@ -350,6 +346,9 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
             updated_frame.resetPolygonForce(new_raw_frame_polygon);
         }
     }
+
+    // join piece into updated Frame
+    updated_frame.pushNewJointedPolygon(piece);
 
     return true;
 }
