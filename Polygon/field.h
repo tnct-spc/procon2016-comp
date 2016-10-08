@@ -27,6 +27,10 @@ private:
 
     //フィールドの累計評価値
     double total_evaluation = 0;
+
+    std::vector<int> before_piece_id;
+    int vector_size = 5;
+
 public:
     // Public Member
     double evaluation_sum;
@@ -51,6 +55,7 @@ public:
     void setElementaryPieces(std::vector<procon::ExpandedPolygon> const& pieces);
     void setIsPlaced(std::array<bool,50> const& IsPlaced);
     void setIsPlaced(int const& piece_id);
+    void setBeforePieceID(int const& id);
     void sumTotalEvaluation(double const& eva);
 
     //getter
@@ -65,6 +70,7 @@ public:
     int getPiecesSize() const;
     double getMinAngle() const;
     double getMinSide() const;
+    std::vector<int> const& getBeforePieceID() const;
     std::bitset<50> const& getPieceID() const;
     std::vector<double> const& getSlopeID() const;
     std::vector<point_t> const& getCoordID() const;

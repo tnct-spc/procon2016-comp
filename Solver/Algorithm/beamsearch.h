@@ -23,7 +23,6 @@ public:
     BeamSearch();
     void run(procon::Field field);
 
-    std::queue<int> before_piece_id;
     bool alpha_is_none = true;
     bool beta_is_none = false;
     bool gamma_is_none = false;

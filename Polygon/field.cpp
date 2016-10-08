@@ -6,6 +6,10 @@ procon::Field::Field()
 {
     field_pieces.reserve(50);
     isPlaced.fill(false);
+    before_piece_id.resize(vector_size);
+    for (int roop = 0;roop < vector_size;roop++) {
+        before_piece_id.at(roop) = -1;
+    }
 }
 
 /*---------------------public--------------------------*/
@@ -56,6 +60,12 @@ void procon::Field::setIsPlaced(const std::array<bool,50> &IsPlaced)
 void procon::Field::setIsPlaced(int const& piece_id)
 {
     isPlaced.at(piece_id) = true;
+}
+
+void procon::Field::setBeforePieceID(int const& id)
+{
+    before_piece_id.erase(before_piece_id.begin());
+    before_piece_id.push_back(id);
 }
 
 void procon::Field::sumTotalEvaluation(const double &eva)
@@ -133,6 +143,12 @@ double procon::Field::getTotalEvaluation() const
     return total_evaluation;
 }
 //remove
+
+std::vector<int> const& procon::Field::getBeforePieceID() const
+{
+    return before_piece_id;
+}
+
 void procon::Field::removePiece(int n)
 {
     field_pieces.erase(field_pieces.begin() + n);

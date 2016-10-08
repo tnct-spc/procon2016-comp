@@ -103,6 +103,7 @@ std::vector<procon::Field> BeamSearch::makeNextField (std::vector<Evaluation> co
 
             if (hasJoinSuccess  && !canPrune(new_frame,min_angle) ) {
                 procon::Field new_field = field_vec.at(vec_id);
+                new_field.setBeforePieceID(piece_id);
                 new_field.sumTotalEvaluation(evaluations.at(j).evaluation);
                 new_field.setFrame(new_frame);
                 new_field.setIsPlaced(piece_id);
@@ -248,9 +249,6 @@ void BeamSearch::run(procon::Field field)
 
     //ピースが全部置かれたら終了
     //このiは添字として使ってるわけではない（ただの回数ルーブ）
-    double gosa = 0.1 / static_cast<int>(field.getElementaryPieces().size());
-    double gosa_angle = 0.017 / static_cast<int>(field.getElementaryPieces().size());
-    int before_id = 0;
     for (int i = 0;i < static_cast<int>(field.getElementaryPieces().size());i++) {
         evaluations.clear();
 
@@ -275,12 +273,8 @@ void BeamSearch::run(procon::Field field)
             if(!gamma_is_none) evaluation.evaluation += gamma * this->evaluateHistory(evaluation,field_vec);
             if(!delta_is_none) evaluation.evaluation += delta * this->evaluateFrame(evaluation,field_vec);
             if(!epsilon_is_none) evaluation.evaluation += epsilon * this->evaluateArea(evaluation,field_vec);
-            if(before_id != -1) {
-                auto &pair = this->matching_pieces.at(before_id).at(evaluation.piece_id);
-                if (evaluation.fits.at(1) == pair.second.at(0) || evaluation.fits.at(1) == pair.second.at(1)){
-                    evaluation.evaluation += pair.first;
-                }
-            }
+            auto &pairs = this->matching_pieces.at(evaluation.piece_id);
+            std::max_element(pairs.begin(),pairs.end(),[](auto & pair1,auto &pair2))
         }
         if (evaluations.empty()){
             submitAnswer(buckup_field);
@@ -312,8 +306,6 @@ void BeamSearch::run(procon::Field field)
             cnt++;
         }
         submitAnswer(field_vec.at(0));
-        this->length_error += gosa;
-        this->angle_error += gosa_angle;
     }
     return;
 }
