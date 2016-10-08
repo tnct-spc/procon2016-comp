@@ -151,7 +151,7 @@ std::vector<procon::Field> BeamSearch::makeNextField (std::vector<Evaluation> co
                 random_vec.emplace_back(i);
             }
             std::uniform_int_distribution<int> variety(start,end - 1);
-            for (int i = end - start - 1;i >= 0;i--){
+            for (int i = end - start - 1;i >= 0;i--) {
                 std::swap(random_vec.at(variety(mt) - start),random_vec.at(i));
             }
             return random_vec;
@@ -250,6 +250,7 @@ void BeamSearch::run(procon::Field field)
     //このiは添字として使ってるわけではない（ただの回数ルーブ）
     double gosa = 0.1 / static_cast<int>(field.getElementaryPieces().size());
     double gosa_angle = 0.017 / static_cast<int>(field.getElementaryPieces().size());
+    int before_id = 0;
     for (int i = 0;i < static_cast<int>(field.getElementaryPieces().size());i++) {
         evaluations.clear();
 
@@ -274,6 +275,12 @@ void BeamSearch::run(procon::Field field)
             if(!gamma_is_none) evaluation.evaluation += gamma * this->evaluateHistory(evaluation,field_vec);
             if(!delta_is_none) evaluation.evaluation += delta * this->evaluateFrame(evaluation,field_vec);
             if(!epsilon_is_none) evaluation.evaluation += epsilon * this->evaluateArea(evaluation,field_vec);
+            if(before_id != -1) {
+                auto &pair = this->matching_pieces.at(before_id).at(evaluation.piece_id);
+                if (evaluation.fits.at(1) == pair.second.at(0) || evaluation.fits.at(1) == pair.second.at(1)){
+                    evaluation.evaluation += pair.first;
+                }
+            }
         }
         if (evaluations.empty()){
             submitAnswer(buckup_field);

@@ -4,6 +4,7 @@
 class Fit
 {
 public:
+    bool operator==(Fit const& fit);
     enum DotORLine { Dot , Line };
     DotORLine start_dot_or_line = Dot;
     int start_id = -1;
