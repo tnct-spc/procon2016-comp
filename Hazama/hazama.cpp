@@ -234,7 +234,8 @@ void Hazama::run()
             sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
             sample11.inners().at(0).push_back(point_t(28.000000012012432100051354,2.00000014331535));
             sample11.inners().at(0).push_back(point_t(28.00000001344,13.0000000143201643));
-            sample11.inners().at(0).push_back(point_t(2.0000000001423003154,13.0000000241300143));
+            sample11.inners().at(0).push_back(point_t(15.00000001344,8.0000000143201643));
+            sample11.inners().at(0).push_back(point_t(2.0000001423003154,13.00000241300143));
             sample11.inners().at(0).push_back(point_t(2.00000000000153143,2.00000000015423));
 
             /*
@@ -254,12 +255,14 @@ void Hazama::run()
             sample11.inners().at(1).push_back(point_t(2.0000000624,28.00000043223));
             sample11.inners().at(1).push_back(point_t(2.000000142135,17.000000001423100153));
 
+            /*
             polygon_t piece1;
             piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
             piece1.outer().push_back(point_t(2.000000000001734,5.00000000000003250134));
             piece1.outer().push_back(point_t(15.00000000000531,2.0000000000123534));
             piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
-            /*yama
+*/
+/*yama
             piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
             piece1.outer().push_back(point_t(8.500000000000531,13.0000000000123534));
             piece1.outer().push_back(point_t(15.0000000001734,7.500000000003250134));
@@ -267,25 +270,25 @@ void Hazama::run()
             piece1.outer().push_back(point_t(28.000000000133234,2.0000000000035134));
             piece1.outer().push_back(point_t(2.0000000000006135,2.00000000001354));
             */
-            /*
+
             polygon_t piece1;
             piece1.outer().push_back(point_t(2.0000000000006135,2.0000000000134));
             piece1.outer().push_back(point_t(15.00000000001334,8.000000000000134));
             piece1.outer().push_back(point_t(28.00000000000531,2.00000000001234));
             piece1.outer().push_back(point_t(2.000000000000153,2.000000000000531434));
             polygon_t piece2;
-            piece2.outer().push_back(point_t(2,17));
-            piece2.outer().push_back(point_t(15,28));
-            piece2.outer().push_back(point_t(28,17));
-            piece2.outer().push_back(point_t(2,17));
-            */
+            piece2.outer().push_back(point_t(2.000000001352,17.0000001430061534));
+            piece2.outer().push_back(point_t(15.0000000243,28.00000013214));
+            piece2.outer().push_back(point_t(28.000000513243,17.0000000153));
+            piece2.outer().push_back(point_t(2.000000001352,17.0000001430061534));
+
 
             Eframe.resetPolygonForce(sample11);
             Epiece1.resetPolygonForce(piece1);
-            //Epiece2.resetPolygonForce(piece2);
+            Epiece2.resetPolygonForce(piece2);
 
             PDATA.setElementaryFrame(Eframe);
-            PDATA.setElementaryPieces(std::vector<procon::ExpandedPolygon>{Epiece1/*,Epiece2*/});
+            PDATA.setElementaryPieces(std::vector<procon::ExpandedPolygon>{Epiece1,Epiece2});
 
         }
 
