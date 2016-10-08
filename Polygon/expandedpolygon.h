@@ -66,7 +66,7 @@ public:
     //setter
     void setMultiIds(std::vector<int> multi_ids_);
     void resetPolygonForce(polygon_t const & p);
-    void pushNewJointedPolygon(polygon_t const & new_frame, procon::ExpandedPolygon const& jointed_polygon);
+    void pushNewJointedPolygon(/*polygon_t const & new_frame, */procon::ExpandedPolygon const& jointed_polygon);
     void replaceJointedPieces(std::vector<procon::ExpandedPolygon> pieces);
 
     //operator

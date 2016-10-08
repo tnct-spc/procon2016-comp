@@ -1,5 +1,10 @@
+#include <array>
+#include <cmath>
+#include <tuple>
+
 #include "polygonconnector.h"
 
+#include "fit.h"
 #include "utilities.h"
 #include "polygonviewer.h"
 
@@ -29,7 +34,7 @@ Ring PolygonConnector::popRingByPolygon(procon::ExpandedPolygon& polygon, int in
 }
 
 //ピースならouterを、フレームなら指定のinner(反転させる)とringを置き換える（最後の点を追加する）
-polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolygon const& polygon, int inner_position)
+polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolygon const& polygon, int inner_position, bool add_new_frame_flag)
 {
     ring.push_back(*ring.begin());
 
@@ -46,9 +51,17 @@ polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolyg
         for(int i=0; i < ring_size; ++i){
             inner.push_back(ring[i]);
         }
-        new_raw_polygon.inners().at(inner_position).clear();
-        for(auto point : inner){
-            new_raw_polygon.inners().at(inner_position).push_back(point);
+        if(add_new_frame_flag==false){
+            new_raw_polygon.inners().at(inner_position).clear();
+            for(auto point : inner){
+                new_raw_polygon.inners().at(inner_position).push_back(point);
+            }
+        }else{
+            new_raw_polygon.inners().push_back(polygon_t::ring_type());
+            inner_position = new_raw_polygon.inners().size()-1;
+            for(auto point : inner){
+                new_raw_polygon.inners().at(inner_position).push_back(point);
+            }
         }
     }
 
@@ -56,7 +69,7 @@ polygon_t PolygonConnector::pushRingToPolygonT(Ring& ring, procon::ExpandedPolyg
 }
 
 //ポリゴンを合体する関数本体 !!!!!!polygon2 mast piece
-bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, procon::ExpandedPolygon piece, procon::ExpandedPolygon& new_polygon, std::array<Fit,2> join_data)
+bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::ExpandedPolygon piece, procon::ExpandedPolygon& updated_frame, std::array<Fit,2> join_data)
 {
 #ifdef DEBUG_RING
     auto debugRing = [](Ring ring, int line){
@@ -70,12 +83,14 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     };
 #endif
 
+    updated_frame = frame;
+
     //結合情報
     Fit fit1 = join_data[0];
     Fit fit2 = join_data[1];
 
     //それぞれOuterとして持つ
-    Ring ring1 = popRingByPolygon(jointed_polygon, jointed_polygon.getInnerSize() == 0 ? -1 : fit1.frame_inner_pos);
+    Ring ring1 = popRingByPolygon(frame, fit1.frame_inner_pos);
     Ring ring2 = popRingByPolygon(piece, -1);
     int size1 = ring1.size();
     int size2 = ring2.size();
@@ -167,11 +182,6 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     piece.translatePolygon(move_x, move_y); //translate piece
     ring2 = popRingByPolygon(piece,-1); //update ring2
 
-    // 重複チェック！
-    if(hasConflict(ring1, ring2, fit1, fit2)){
-        return false;
-    }
-
 #ifdef DEBUG_RING
     debugRing(ring1,__LINE__);
     debugRing(ring2,__LINE__);
@@ -261,19 +271,84 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon jointed_polygon, proc
     debugRing(new_ring,__LINE__);
 #endif
 
+    // Divide polygon to dividedFrameRings
+    std::vector<Ring> dividedFrameRings = {new_ring};
+    std::function<void(Ring)> divideFrameRing = [&divideFrameRing,&dividedFrameRings](Ring new_ring){
+        int new_ring_size = new_ring.size() - 1;
+
+        // Search Connection
+        std::tuple<bool,bool,int,int> field_divide_data = searchFieldConnection(new_ring);
+
+        if(std::get<0>(field_divide_data) == true){
+            // Erase parent
+            dividedFrameRings.pop_back();
+
+            // Debug
+            Fit::DotORLine start_dot_or_line = std::get<1>(field_divide_data)? Fit::Dot : Fit::Line;
+            int start_id = std::get<2>(field_divide_data);
+            int end_id = std::get<3>(field_divide_data);
+            std::cout<<"Divide!"<<start_dot_or_line<<","<<start_id<<","<<end_id<<std::endl;
+
+            /* Divide and generate twice ring(=polygon) */
+            Ring new_left_ring;
+            Ring new_right_ring;
+            int seek_pos_id = -1;
+
+            // Generate Left Ring
+            seek_pos_id = end_id;
+            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? start_id : Utilities::inc(start_id,new_ring_size))){
+                new_left_ring.push_back(new_ring.at(seek_pos_id));
+                seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
+            }
+            new_left_ring.push_back(new_ring.at(end_id));
+
+            // Generate Right Ring
+            seek_pos_id = Utilities::inc(start_id,new_ring_size);
+            new_right_ring.push_back(new_ring.at(end_id));
+            while(seek_pos_id != (start_dot_or_line == Fit::Dot ? end_id : end_id)){
+                new_right_ring.push_back(new_ring.at(seek_pos_id));
+                seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
+            }
+            new_right_ring.push_back(new_ring.at(end_id));
+
+            dividedFrameRings.push_back(new_left_ring);
+            dividedFrameRings.push_back(new_right_ring);
+
+            divideFrameRing(new_left_ring);
+            divideFrameRing(new_right_ring);
+
+        }else{
+            std::cout<<"Don't need devide."<<std::endl;
+        }
+
+    };
+
+    Ring covered_new_ring = new_ring;
+    covered_new_ring.push_back(new_ring.front());
+
+    divideFrameRing(covered_new_ring);
+
+    // 重複チェック！
+    //if(hasConflict(ring1, ring2, fit1, fit2)){
+    //    return false;
+    //}
+
     //　ポリゴンにRingを出力しておしまい
-    //TODO
-    if(jointed_polygon.getInnerSize() != 0){ //frame-piece
-        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, jointed_polygon, fit1.frame_inner_pos);
-        jointed_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
-        new_polygon = std::move(jointed_polygon);
-        new_polygon.pushNewJointedPolygon(new_raw_polygon, piece);
-    }else{ //piece-piece
-        throw "Not supported!";
-        new_polygon.setMultiIds(std::vector<int>{jointed_polygon.getId(), piece.getId()});
-        polygon_t new_raw_polygon = pushRingToPolygonT(new_ring, new_polygon);
-        //new_polygon.pushNewJointedPolygon(jointed_polygon, join_data);
-        //new_polygon.pushNewJointedPolygon(piece, join_data);
+
+    // join piece into updated Frame
+    updated_frame.pushNewJointedPolygon(piece);
+
+    bool first_attach_push_new_frame = true;
+    for(auto& divided_frame_ring : dividedFrameRings){
+        //add new_ring to updatedFrame
+        if(first_attach_push_new_frame){
+            first_attach_push_new_frame = false;
+            polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, fit1.frame_inner_pos,false);
+            updated_frame.resetPolygonForce(new_raw_frame_polygon);
+        }else{
+            polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, 0,true);
+            updated_frame.resetPolygonForce(new_raw_frame_polygon);
+        }
     }
 
     return true;
@@ -414,4 +489,777 @@ bool PolygonConnector::hasConflict(Ring ring1, Ring ring2, Fit fit1, Fit fit2)
         }
     }
     return false;
+}
+
+std::tuple<bool,bool,int,int> PolygonConnector::searchFieldConnection(std::vector<point_t> inner)
+{
+
+    struct Line{
+        double a;
+        double b;
+        double c;
+    };
+
+    //calc length point to point
+    auto calcPointToPointDistance = [](point_t start,point_t end)->double{
+        return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+    };
+
+    //calc length point to line
+    auto calcLineToDistance = [](point_t a,point_t b,point_t c)->double{
+
+        struct Vec2d{
+            double x;
+            double y;
+        };
+
+        //naiseki
+        auto Dot = [](Vec2d a,Vec2d b)->double{
+            return a.x * b.x + a.y + b.y;
+        };
+
+        //gaiseki
+        auto Cross = [](Vec2d a,Vec2d b)->double{
+            return a.x * b.y - a.y * b.x;
+        };
+
+        auto calcVec = [](point_t a,point_t b)->Vec2d{
+            Vec2d vec;
+            vec.x = b.x() - a.x();
+            vec.y = b.y() - a.y();
+
+            return vec;
+        };
+
+        auto calcLineABC = [](point_t start,point_t end)->Line{
+
+            Line line;
+
+            line.a = start.y() - end.y();
+            line.b = end.x() - start.x();
+            line.c = -((line.b * start.y()) + (line.a * start.x()));
+
+            /*
+            const double a = y1 - y2;
+            const double b = x2 - x1;
+            const double c = (-b * y1) + (-a * x1);
+            */
+
+            return line;
+        };
+
+        auto calcPointToLineDistance = [](point_t point,Line line){
+
+            //line.c = 0;
+
+            const double bunshi = line.a * point.x() + line.b * point.y() + line.c;
+            const double bunbo = line.a * line.a + line.b * line.b;
+
+            const double distance = bunshi * bunshi / bunbo;
+
+            return distance;
+        };
+
+
+
+        if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
+
+            //std::cout << "out of hani" << std::endl;
+
+            return 100.0;
+
+        }
+
+        if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
+
+            //std::cout << "out of hani" << std::endl;
+
+            return 100.0;
+        }
+
+        Line line = calcLineABC(a,b);
+
+        const double distance = calcPointToLineDistance(c,line);
+
+        return distance;
+
+    };
+
+    auto checkFirstPointHasNearPoint = [](unsigned int i,double gosaaaaaaaaa,procon::Field fieeld){
+
+        auto calcPointToPointDistance = [](point_t start,point_t end)->double{
+            return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+        };
+
+
+        for(unsigned int k = 1; k < ( fieeld.getFrame().getPolygon().inners().at(i).size() ) - 1; k++){
+
+            const double distance_1 = calcPointToPointDistance(fieeld.getFrame().getPolygon().inners().at(i).at(0)
+                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(k));
+
+            if(distance_1 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                return std::tuple<bool,int>{true,k};
+
+            }
+
+
+        }
+
+        return std::tuple<bool,int>(false,0);
+
+    };
+
+    auto checkFirstLineHasNearPoint = [](unsigned int i,double gosaaaaaaaaa,procon::Field fieeld){
+
+        auto calcPointToPointDistance = [](point_t start,point_t end)->double{
+            return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+        };
+
+        //calc length point to line1
+        auto calcLineToDistance = [](point_t a,point_t b,point_t c)->double{
+
+            struct Vec2d{
+                double x;
+                double y;
+            };
+
+            //naiseki
+            auto Dot = [](Vec2d a,Vec2d b)->double{
+                return a.x * b.x + a.y + b.y;
+            };
+
+            //gaiseki
+            auto Cross = [](Vec2d a,Vec2d b)->double{
+                return a.x * b.y - a.y * b.x;
+            };
+
+            auto calcVec = [](point_t a,point_t b)->Vec2d{
+                Vec2d vec;
+                vec.x = b.x() - a.x();
+                vec.y = b.y() - a.y();
+
+                return vec;
+            };
+
+            auto calcLineABC = [](point_t start,point_t end)->Line{
+
+                Line line;
+
+                line.a = start.y() - end.y();
+                line.b = end.x() - start.x();
+                line.c = (line.b * start.y()) + (line.a * start.x());
+
+                /*
+                const double a = y1 - y2;
+                const double b = x2 - x1;
+                const double c = (-b * y1) + (-a * x1);
+                */
+
+                return line;
+            };
+
+            auto calcPointToLineDistance = [](point_t point,Line line){
+
+                //line.c = 0;
+
+                const double bunshi = line.a * point.x() + line.b * point.y() + line.c;
+                const double bunbo = line.a * line.a + line.b * line.b;
+
+                const double distance = bunshi * bunshi / bunbo;
+
+                return distance;
+            };
+
+
+
+            if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
+
+                //std::cout << "out of hani" << std::endl;
+
+                return 100.0;
+
+            }
+
+            if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
+
+                //std::cout << "out of hani" << std::endl;
+
+                return 100.0;
+            }
+
+            Line line = calcLineABC(a,b);
+
+            const double distance = calcPointToLineDistance(c,line);
+
+            return distance;
+
+        };
+
+        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
+
+        Fit fit_buf;
+
+        for(unsigned int k = 2; k < inner_size -1; k++ ){
+
+            const double distance_2 = calcLineToDistance(fieeld.getFrame().getPolygon().inners().at(i).at(0)
+                                                         ,fieeld.getFrame().getPolygon().inners().at(i).at(1)
+                                                         ,fieeld.getFrame().getPolygon().inners().at(i).at(k));
+
+            if(distance_2 < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                return std::tuple<bool,int,int> {true, 0, k };
+
+            }
+
+        }
+
+        return std::tuple<bool,int,int> {false, 0 ,0};
+
+    };
+
+    auto checkPointHasNearPoint = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,procon::Field fieeld){
+
+        //calc length point to point
+        auto calcPointToPointDistance = [](point_t start,point_t end)->double{
+            return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+        };
+
+        //calc length point to line
+        auto calcLineToDistance = [](point_t a,point_t b,point_t c)->double{
+
+            struct Vec2d{
+                double x;
+                double y;
+            };
+
+            //naiseki
+            auto Dot = [](Vec2d a,Vec2d b)->double{
+                return a.x * b.x + a.y + b.y;
+            };
+
+            //gaiseki
+            auto Cross = [](Vec2d a,Vec2d b)->double{
+                return a.x * b.y - a.y * b.x;
+            };
+
+            auto calcVec = [](point_t a,point_t b)->Vec2d{
+                Vec2d vec;
+                vec.x = b.x() - a.x();
+                vec.y = b.y() - a.y();
+
+                return vec;
+            };
+
+            auto calcLineABC = [](point_t start,point_t end)->Line{
+
+                Line line;
+
+                line.a = start.y() - end.y();
+                line.b = end.x() - start.x();
+                line.c = (line.b * start.y()) + (line.a * start.x());
+
+                /*
+                const double a = y1 - y2;
+                const double b = x2 - x1;
+                const double c = (-b * y1) + (-a * x1);
+                */
+
+                return line;
+            };
+
+            auto calcPointToLineDistance = [](point_t point,Line line){
+
+                //line.c = 0;
+
+                const double bunshi = line.a * point.x() + line.b * point.y() + line.c;
+                const double bunbo = line.a * line.a + line.b * line.b;
+
+                const double distance = bunshi * bunshi / bunbo;
+
+                return distance;
+            };
+
+
+
+            if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
+
+                //std::cout << "out of hani" << std::endl;
+
+                return 100.0;
+
+            }
+
+            if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
+
+                //std::cout << "out of hani" << std::endl;
+
+                return 100.0;
+            }
+
+            Line line = calcLineABC(a,b);
+
+            const double distance = calcPointToLineDistance(c,line);
+
+            return distance;
+
+        };
+
+
+        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
+
+        for(unsigned int l = k + 1; l < inner_size - 1; l++ ){
+
+            const double distanceee = calcPointToPointDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
+                                                               ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
+
+            if(distanceee < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                return std::tuple<bool,int,int> {true, k, l};
+
+            }
+        }
+
+        return std::tuple<bool,int,int> {false,0,0};
+    };
+
+    auto checkPointHasNearLine = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,procon::Field fieeld){
+
+        //calc length point to point
+        auto calcPointToPointDistance = [](point_t start,point_t end)->double{
+            return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+        };
+
+        //calc length point to line
+        auto calcLineToDistance = [](point_t a,point_t b,point_t c)->double{
+
+            struct Vec2d{
+                double x;
+                double y;
+            };
+
+            //naiseki
+            auto Dot = [](Vec2d a,Vec2d b)->double{
+                return a.x * b.x + a.y + b.y;
+            };
+
+            //gaiseki
+            auto Cross = [](Vec2d a,Vec2d b)->double{
+                return a.x * b.y - a.y * b.x;
+            };
+
+            auto calcVec = [](point_t a,point_t b)->Vec2d{
+                Vec2d vec;
+                vec.x = b.x() - a.x();
+                vec.y = b.y() - a.y();
+
+                return vec;
+            };
+
+            auto calcLineABC = [](point_t start,point_t end)->Line{
+
+                Line line;
+
+                line.a = start.y() - end.y();
+                line.b = end.x() - start.x();
+                line.c = -((line.b * start.y()) + (line.a * start.x()));
+
+                /*
+                const double a = y1 - y2;
+                const double b = x2 - x1;
+                const double c = (-b * y1) + (-a * x1);
+                */
+
+                return line;
+            };
+
+            auto calcPointToLineDistance = [](point_t point,Line line){
+
+
+                const double bunshi = line.a * point.x() + line.b * point.y() + line.c;
+                const double bunbo = line.a * line.a + line.b * line.b;
+
+                const double distance = bunshi * bunshi / bunbo;
+
+                return distance;
+            };
+
+
+
+            if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
+
+                //std::cout << "out of hani" << std::endl;
+
+                return 100.0;
+
+            }
+
+            if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
+
+                //std::cout << "out of hani" << std::endl;
+
+                return 100.0;
+            }
+
+            Line line = calcLineABC(a,b);
+
+            const double distance = calcPointToLineDistance(c,line);
+
+            return distance;
+
+        };
+
+
+        const unsigned int inner_size = fieeld.getFrame().getPolygon().inners().at(i).size();
+
+        for(unsigned int l = 0; l < inner_size - 1; l++){
+
+            if(l == k){
+                l = l + 2;
+            }
+            if(k > (inner_size - 2)){
+                break;
+            }
+
+            if(l > (inner_size - 2)){
+                break;
+            }
+
+            const double distanceeeee = calcLineToDistance(fieeld.getFrame().getPolygon().inners().at(i).at(k)
+                                                           ,fieeld.getFrame().getPolygon().inners().at(i).at(k + 1)
+                                                           ,fieeld.getFrame().getPolygon().inners().at(i).at(l));
+
+
+            if(distanceeeee < ( gosaaaaaaaaa * gosaaaaaaaaa ) ){
+
+                return std::tuple<bool,int,int>{true,k,l};
+
+            }
+        }
+
+        return std::tuple<bool,int,int>{false,0,0};
+
+    };
+
+    auto goHasNearPiecePoint = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,std::vector<point_t> inner){
+
+        auto checkPointHasNearPoint = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,std::vector<point_t> inner){
+
+            //calc length point to point
+            auto calcPointToPointDistance = [](point_t start,point_t end)->double{
+                return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+            };
+
+            //calc length point to line
+            auto calcLineToDistance = [](point_t a,point_t b,point_t c)->double{
+
+                struct Vec2d{
+                    double x;
+                    double y;
+                };
+
+                //naiseki
+                auto Dot = [](Vec2d a,Vec2d b)->double{
+                    return a.x * b.x + a.y + b.y;
+                };
+
+                //gaiseki
+                auto Cross = [](Vec2d a,Vec2d b)->double{
+                    return a.x * b.y - a.y * b.x;
+                };
+
+                auto calcVec = [](point_t a,point_t b)->Vec2d{
+                    Vec2d vec;
+                    vec.x = b.x() - a.x();
+                    vec.y = b.y() - a.y();
+
+                    return vec;
+                };
+
+                auto calcLineABC = [](point_t start,point_t end)->Line{
+
+                    Line line;
+
+                    line.a = start.y() - end.y();
+                    line.b = end.x() - start.x();
+                    line.c = (line.b * start.y()) + (line.a * start.x());
+
+                    /*
+                    const double a = y1 - y2;
+                    const double b = x2 - x1;
+                    const double c = (-b * y1) + (-a * x1);
+                    */
+
+                    return line;
+                };
+
+                auto calcPointToLineDistance = [](point_t point,Line line){
+
+                    //line.c = 0;
+
+                    const double bunshi = line.a * point.x() + line.b * point.y() + line.c;
+                    const double bunbo = line.a * line.a + line.b * line.b;
+
+                    const double distance = bunshi * bunshi / bunbo;
+
+                    return distance;
+                };
+
+
+
+                if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
+
+                    //std::cout << "out of hani" << std::endl;
+
+                    return 100.0;
+
+                }
+
+                if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
+
+                    //std::cout << "out of hani" << std::endl;
+
+                    return 100.0;
+                }
+
+                Line line = calcLineABC(a,b);
+
+                const double distance = calcPointToLineDistance(c,line);
+
+                return distance;
+
+            };
+
+
+            const unsigned int inner_size = inner.size();
+
+            for(unsigned int l = k + 1; l < inner_size - 1; l++ ){
+
+                const double distanceee = calcPointToPointDistance(inner.at(k)
+                                                                   ,inner.at(l));
+
+                if(distanceee < gosaaaaaaaaa * gosaaaaaaaaa){
+
+                    return std::tuple<bool,int,int> {true, k, l};
+
+                }
+            }
+
+            return std::tuple<bool,int,int> {false,0,0};
+        };
+
+        auto checkPointHasNearLine = [](unsigned int i,unsigned int k,double gosaaaaaaaaa,std::vector<point_t> inner){
+
+            //calc length point to point
+            auto calcPointToPointDistance = [](point_t start,point_t end)->double{
+                return (start.x() - end.x()) * (start.x() - end.x()) + (start.y() - end.y()) * (start.y() - end.y());
+            };
+
+            //calc length point to line
+            auto calcLineToDistance = [](point_t a,point_t b,point_t c)->double{
+
+                struct Vec2d{
+                    double x;
+                    double y;
+                };
+
+                //naiseki
+                auto Dot = [](Vec2d a,Vec2d b)->double{
+                    return a.x * b.x + a.y + b.y;
+                };
+
+                //gaiseki
+                auto Cross = [](Vec2d a,Vec2d b)->double{
+                    return a.x * b.y - a.y * b.x;
+                };
+
+                auto calcVec = [](point_t a,point_t b)->Vec2d{
+                    Vec2d vec;
+                    vec.x = b.x() - a.x();
+                    vec.y = b.y() - a.y();
+
+                    return vec;
+                };
+
+                auto calcLineABC = [](point_t start,point_t end)->Line{
+
+                    Line line;
+
+                    line.a = start.y() - end.y();
+                    line.b = end.x() - start.x();
+                    line.c = -((line.b * start.y()) + (line.a * start.x()));
+
+                    /*
+                    const double a = y1 - y2;
+                    const double b = x2 - x1;
+                    const double c = (-b * y1) + (-a * x1);
+                    */
+
+                    return line;
+                };
+
+                auto calcPointToLineDistance = [](point_t point,Line line){
+
+
+                    const double bunshi = line.a * point.x() + line.b * point.y() + line.c;
+                    const double bunbo = line.a * line.a + line.b * line.b;
+
+                    const double distance = bunshi * bunshi / bunbo;
+
+                    return distance;
+                };
+
+
+
+                if(Dot(calcVec(a,b),calcVec(a,c)) < 0.0){
+
+                    //std::cout << "out of hani" << std::endl;
+
+                    return 100.0;
+
+                }
+
+                if(Dot(calcVec(b,a),calcVec(b,c)) < 0.0){
+
+                    //std::cout << "out of hani" << std::endl;
+
+                    return 100.0;
+                }
+
+                Line line = calcLineABC(a,b);
+
+                const double distance = calcPointToLineDistance(c,line);
+
+                return distance;
+
+            };
+
+
+            const unsigned int inner_size = inner.size();
+
+            for(unsigned int l = 0; l < inner_size - 1; l++){
+
+                if(k >= inner_size-1){
+                    break;
+                }
+
+                if(l == k){
+                    l = l + 2;
+                    if(l >= (inner_size - 1)){
+                        break;
+                    }
+                }
+
+                if(k == inner_size-2 && l==0){
+                    l = 1;
+                }
+
+                const double distanceeeee = calcLineToDistance(inner.at(k)
+                                                               ,inner.at(k + 1)
+                                                               ,inner.at(l));
+
+
+                if(distanceeeee < ( gosaaaaaaaaa * gosaaaaaaaaa ) ){
+
+                    return std::tuple<bool,int,int>{true,k,l};
+
+                }
+            }
+
+            return std::tuple<bool,int,int>{false,0,0};
+
+        };
+
+        const unsigned int inner_size = inner.size();
+
+        for(unsigned int l = k; l < inner_size; ++l){
+
+            std::tuple<bool,int,int> result_1 = checkPointHasNearPoint(i,l,gosaaaaaaaaa,inner);
+
+            if(std::get<0>(result_1)){
+
+                return std::tuple<bool,bool,int,int> {std::get<0>(result_1),true,std::get<1>(result_1),std::get<2>(result_1)};
+
+                break;
+
+            }
+        }
+
+
+        for(unsigned int l = 0; l < inner_size; ++l){
+
+            std::tuple<bool,int,int> result_2 = checkPointHasNearLine(i,l,gosaaaaaaaaa,inner);
+
+            if(std::get<0>(result_2)){
+
+                return std::tuple<bool,bool,int,int> {std::get<0>(result_2),false,std::get<1>(result_2),std::get<2>(result_2)};
+
+                break;
+
+            }
+
+        }
+
+        return std::tuple<bool,bool,int,int> {false,false,0,0};
+
+    };
+
+
+    constexpr double gosaaaaaaaaaaaaaaaa = 0.1;
+
+    /*
+    for(unsigned int i = 0; i < field.getFrame().getPolygon().inners().size(); i++){
+
+        /*
+        std::tuple<bool,int> result = checkFirstPointHasNearPoint(i,gosaaaaaaaaaaaaaaaa,field);
+
+        std::cout << "weeei"<<std::get<0>(result) << std::endl;
+        std::cout << "weeei"<<std::get<1>(result) << std::endl;
+
+        std::tuple<bool,int,int> ressslut = checkFirstLineHasNearPoint(i,gosaaaaaaaaaaaaaaaa,field);
+
+        std::cout << "weeeeeei" << std::get<0>(ressslut) << std::endl;
+
+        for(int a = 0; a < field.getFrame().getPolygon().inners().at(i).size(); a++){
+
+            std::tuple<bool,int,int> reeeesullltttt = checkPointHasNearPoint(i,a,gosaaaaaaaaaaaaaaaa,field);
+            std::cout << "true:false" << std::get<0>(reeeesullltttt) << std::endl;
+            std::cout << "pointnum" << std::get<1>(reeeesullltttt) << std::endl;
+            std::cout << "dor" << std::get<2>(reeeesullltttt) << std::endl;
+
+        }
+
+        for(int a = 0; a < field.getFrame().getPolygon().inners().at(i).size(); a++){
+
+            std::tuple<bool,int,int> reeeesullltttt = checkPointHasNearLine(i,a,gosaaaaaaaaaaaaaaaa,field);
+            std::cout << "true:false" << std::get<0>(reeeesullltttt) << std::endl;
+            std::cout << "pointnum" << std::get<1>(reeeesullltttt) << std::endl;
+            std::cout << "dor" << std::get<2>(reeeesullltttt) << std::endl;
+
+        }
+
+        std::cout << "weiriieirwire" << calcLineToDistance(point_t(15,15),point_t(0,15),point_t(5,0)) << std::endl;
+
+        std::tuple<bool,bool,int,int> resultttttttt = goHasNearPiecePoint(i,1,gosaaaaaaaaaaaaaaaa,field);
+
+        std::cout << "startnumber" << std::get<0>(resultttttttt) << std::endl;
+        std::cout << "startnumber" << std::get<1>(resultttttttt) << std::endl;
+        std::cout << "startnumber" << std::get<2>(resultttttttt) << std::endl;
+        std::cout << "startnumber" << std::get<3>(resultttttttt) << std::endl;
+        /
+
+        std::tuple<bool,bool,int,int> resulttttt = goHasNearPiecePoint(i,0,gosaaaaaaaaaaaaaaaa,field);
+
+        return resulttttt;
+    }
+    *//*
+    std::tuple<bool,bool,int,int> resultttttttt = goHasNearPiecePoint(0,0,gosaaaaaaaaaaaaaaaa,inner);
+
+    std::cout << "startnumber" << std::get<0>(resultttttttt) << std::endl;
+    std::cout << "startnumber" << std::get<1>(resultttttttt) << std::endl;
+    std::cout << "startnumber" << std::get<2>(resultttttttt) << std::endl;
+    std::cout << "startnumber" << std::get<3>(resultttttttt) << std::endl;
+
+    */
+    return goHasNearPiecePoint(0,0,gosaaaaaaaaaaaaaaaa,inner);
 }

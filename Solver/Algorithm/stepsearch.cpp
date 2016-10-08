@@ -4,6 +4,9 @@
 #include "Utils/polygonconnector.h"
 #include <QTimer>
 
+#define NO_SORT_MODE
+#define NO_PRUNE_MODE
+
 StepSearch::StepSearch()
 {
 }
@@ -80,9 +83,13 @@ std::vector<procon::Field> StepSearch::makeNextField (std::vector<Evaluation> co
             procon::ExpandedPolygon new_frame;
 
             bool hasJoinSuccess = PolygonConnector::joinPolygon(old_frame,old_piece,new_frame,fits);
-            double const min_angle = field_vec.at(vec_id).getMinAngle();
 
+#ifdef NO_PRUNE_MODE
+            if(hasJoinSuccess){
+#else
+            double const min_angle = field_vec.at(vec_id).getMinAngle();
             if (hasJoinSuccess  && !canPrune(new_frame,min_angle) ) {
+#endif
                 procon::Field new_field = field_vec.at(vec_id);
                 new_field.setFrame(new_frame);
                 new_field.setIsPlaced(piece_id);
@@ -116,8 +123,6 @@ void StepSearch::run(procon::Field field)
     field.setFrame(field.getElementaryFrame());
     field_vec.push_back(field);
 
-    //ピースが全部置かれたら終了
-    //このiは添字として使ってるわけではない（ただの回数ルーブ）
     while(1){
         evaluations.clear();
 
@@ -126,7 +131,9 @@ void StepSearch::run(procon::Field field)
 
         this->evaluateNextMove(evaluations,field_vec);
 
+#ifndef NO_SORT_MODE
         std::sort(evaluations.begin(),evaluations.end(),sortEvaLambda);
+#endif
 
         field_vec = std::move(this->makeNextField(evaluations,field_vec));
 

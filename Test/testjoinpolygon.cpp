@@ -1,5 +1,4 @@
 #include "testjoinpolygon.h"
-
 #include "field.h"
 #include "polygonviewer.h"
 #include "Utils/polygonconnector.h"
@@ -12,6 +11,7 @@ TestJoinPolygon::TestJoinPolygon()
 
 bool TestJoinPolygon::run()
 {
+    /*
     //1
     {
         procon::ExpandedPolygon polygon1(0);
@@ -185,6 +185,7 @@ bool TestJoinPolygon::run()
         PolygonViewer::getInstance().pushPolygon(result, TO_STRING(result));
 
     }
+    */
     return true;
 }
 
