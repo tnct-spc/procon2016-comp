@@ -272,7 +272,7 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
 
     // Divide polygon to dividedFrameRings
     std::vector<Ring> dividedFrameRings = {new_ring};
-    std::function<void(Ring)> divideFrameRing = [&divideFrameRing,&dividedFrameRings](Ring new_ring){
+    std::function<void(Ring)> divideFrameRing = [&divideFrameRing,&dividedFrameRings](Ring new_ring)->void{
         int new_ring_size = new_ring.size() - 1;
 
         // Search Connection
@@ -281,6 +281,9 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
         if(std::get<0>(field_divide_data) == true){
             // Erase parent
             dividedFrameRings.pop_back();
+
+            // Reject invalid area
+            if(new_ring.size() < 3) return;
 
             // Debug
             Fit::DotORLine start_dot_or_line = std::get<1>(field_divide_data)? Fit::Dot : Fit::Line;
@@ -299,7 +302,7 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
                 new_left_ring.push_back(new_ring.at(seek_pos_id));
                 seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
             }
-            new_left_ring.push_back(new_ring.at(end_id));
+            //new_left_ring.push_back(new_ring.at(end_id));
 
             // Generate Right Ring
             seek_pos_id = Utilities::inc(start_id,new_ring_size);
@@ -308,7 +311,7 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
                 new_right_ring.push_back(new_ring.at(seek_pos_id));
                 seek_pos_id = Utilities::inc(seek_pos_id,new_ring_size);
             }
-            new_right_ring.push_back(new_ring.at(end_id));
+            //new_right_ring.push_back(new_ring.at(end_id));
 
             dividedFrameRings.push_back(new_left_ring);
             divideFrameRing(new_left_ring);
@@ -328,9 +331,9 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
     divideFrameRing(covered_new_ring);
 
     // 重複チェック！
-    //if(hasConflict(ring1, ring2, fit1, fit2)){
-    //    return false;
-    //}
+    if(hasConflict(ring1, ring2, fit1, fit2)){
+        //return false;
+    }
 
     //　ポリゴンにRingを出力しておしまい
 
@@ -340,10 +343,10 @@ bool PolygonConnector::joinPolygon(procon::ExpandedPolygon frame, procon::Expand
         if(first_attach_push_new_frame){
             first_attach_push_new_frame = false;
             polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, fit1.frame_inner_pos,false);
-            updated_frame.resetPolygonForce(new_raw_frame_polygon);
+            updated_frame.resetPolygonSoft(new_raw_frame_polygon);
         }else{
             polygon_t new_raw_frame_polygon = pushRingToPolygonT(divided_frame_ring, updated_frame, 0,true);
-            updated_frame.resetPolygonForce(new_raw_frame_polygon);
+            updated_frame.resetPolygonSoft(new_raw_frame_polygon);
         }
     }
 

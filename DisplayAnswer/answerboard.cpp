@@ -106,7 +106,7 @@ void AnswerBoard::paintEvent(QPaintEvent *)
         int inners_num = polygon.inners().size();
 
         for(int inner = 0; inner < inners_num; inner++){
-            painter.setBrush(QBrush(QColor(rand()%255,rand()%255,rand()%255)));
+            //painter.setBrush(QBrush(QColor(rand()%255,rand()%255,rand()%255)));
 
             int dot_num = polygon.inners().at(inner).size();
             QPointF* draw_point = new QPointF[dot_num];
